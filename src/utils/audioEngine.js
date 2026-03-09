@@ -1,14 +1,23 @@
 import { Howl } from 'howler';
 
-// Store your MP3 files in the public folder and reference them here, e.g., '/audio/bgm1.mp3'
+// Use reliable external MP3 streams for BGM (Pixabay now strictly blocks direct hotlinking with 403 Forbidden).
+// These are free electronic/synth tracks from SoundHelix that work perfectly for game BGM without CORS issues.
 const BGM_TRACKS = [
-    'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a1b64cb1.mp3?filename=stranger-things-124008.mp3', // Synthwave / Retro
-    'https://cdn.pixabay.com/download/audio/2021/11/25/audio_108cc0edde.mp3?filename=retro-wave-style-track-61614.mp3', // Synthwave
-    'https://cdn.pixabay.com/download/audio/2022/03/10/audio_c8dec344af.mp3?filename=cyberpunk-synthwave-108849.mp3'  // Cyberpunk
+    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', // Upbeat Electronic
+    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', // Synthwave Style
+    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'  // Mid-tempo Cyberpunk
 ];
 
 class AudioEngine {
     constructor() {
+        this.bgms = [];
+        this.initialized = false;
+        this.currentBgm = null;
+        this.currentRate = 1.0;
+    }
+
+    init() {
+        if (this.initialized) return;
         this.bgms = BGM_TRACKS.map(url => new Howl({
             src: [url],
             loop: true,
@@ -16,11 +25,11 @@ class AudioEngine {
             preload: true,
             html5: true, // Best practice for streaming long BGM without blocking memory
         }));
-        this.currentBgm = null;
-        this.currentRate = 1.0;
+        this.initialized = true;
     }
 
     playBGM() {
+        this.init(); // Initialize on first play (after user gesture)
         if (this.bgms.length === 0) return; // No BGM tracks available
 
         if (this.currentBgm && this.currentBgm.playing()) {
