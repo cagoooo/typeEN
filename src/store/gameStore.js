@@ -13,6 +13,7 @@ const saveGuestData = (state) => {
         unlockedItems: state.unlockedItems,
         equippedBackground: state.equippedBackground,
         equippedEffect: state.equippedEffect,
+        equippedBgm: state.equippedBgm,
         campaignUnlocked: state.campaignUnlocked
     };
     localStorage.setItem('typeEN_guestData', encryptData(dataToSave));
@@ -50,10 +51,11 @@ export const useGameStore = create((set, get) => ({
     userProfile: null,
     coins: savedGuestData?.coins || 0,
 
-    // Shop state
+    // Shop & Settings state
     unlockedItems: savedGuestData?.unlockedItems || ['default_bg', 'default_beam'],
     equippedBackground: savedGuestData?.equippedBackground || 'default_bg',
     equippedEffect: savedGuestData?.equippedEffect || 'default_beam',
+    equippedBgm: savedGuestData?.equippedBgm || 'bgm_auto',
 
     setUserProfile: (profile) => set({ userProfile: profile }),
     setCoins: (amount) => {
@@ -61,6 +63,11 @@ export const useGameStore = create((set, get) => ({
             userProfile: state.userProfile ? { ...state.userProfile, coins: amount } : null,
             coins: amount
         }));
+        saveGuestData(get());
+    },
+
+    setEquippedBgm: (bgmId) => {
+        set({ equippedBgm: bgmId });
         saveGuestData(get());
     },
 

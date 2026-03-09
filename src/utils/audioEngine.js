@@ -1,18 +1,12 @@
 import { Howl } from 'howler';
-
-// Use reliable external MP3 streams for BGM (Pixabay now strictly blocks direct hotlinking with 403 Forbidden).
-// These are free electronic/synth tracks from SoundHelix that work perfectly for game BGM without CORS issues.
-const BGM_TRACKS = [
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', // Upbeat Electronic
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', // Synthwave Style
-    'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'  // Mid-tempo Cyberpunk
-];
+import { BGM_CHOICES } from './constants';
 
 const synth = window.speechSynthesis;
 
 class AudioEngine {
     constructor() {
-        this.bgms = [];
+        this.bgms = {};
+        this.autoKeys = [];
         this.initialized = false;
         this.currentBgm = null;
         this.currentRate = 1.0;
@@ -20,13 +14,19 @@ class AudioEngine {
 
     init() {
         if (this.initialized) return;
-        this.bgms = BGM_TRACKS.map(url => new Howl({
-            src: [url],
-            loop: true,
-            volume: 0.5,
-            preload: true,
-            html5: true, // Best practice for streaming long BGM without blocking memory
-        }));
+
+        BGM_CHOICES.forEach(choice => {
+            if (choice.url !== 'auto') {
+                this.bgms[choice.id] = new Howl({
+                    src: [choice.url],
+                    loop: true,
+                    volume: 0.5,
+                    preload: true,
+                    html5: true,
+                });
+                this.autoKeys.push(choice.id);
+            }
+        });
 
         this.bossBgm = new Howl({
             src: ['https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3'], // Intense Boss music
@@ -39,17 +39,21 @@ class AudioEngine {
         this.initialized = true;
     }
 
-    playBGM() {
+    playBGM(bgmId = 'bgm_auto') {
         this.init(); // Initialize on first play (after user gesture)
-        if (this.bgms.length === 0) return; // No BGM tracks available
+        if (this.autoKeys.length === 0) return; // No BGM tracks available
 
         if (this.currentBgm && this.currentBgm.playing()) {
-            return;
+            this.currentBgm.stop();
         }
 
-        // Randomly select a track
-        const randomIndex = Math.floor(Math.random() * this.bgms.length);
-        this.currentBgm = this.bgms[randomIndex];
+        let trackIdToPlay = bgmId;
+        if (bgmId === 'bgm_auto' || !this.bgms[bgmId]) {
+            const randomIndex = Math.floor(Math.random() * this.autoKeys.length);
+            trackIdToPlay = this.autoKeys[randomIndex];
+        }
+
+        this.currentBgm = this.bgms[trackIdToPlay];
 
         // Reset rate and volume to default
         if (this.currentBgm) {

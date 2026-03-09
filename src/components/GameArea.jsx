@@ -179,7 +179,7 @@ const GameArea = ({ onGameEnd }) => {
                 incrementCompleted();
 
                 // Return BGM to normal after defeating boss
-                audioEngine.playBGM();
+                audioEngine.playBGM(useGameStore.getState().equippedBgm);
             }
             return;
         }
@@ -369,7 +369,7 @@ const GameArea = ({ onGameEnd }) => {
         engineState.current.missedLetters = {};
         timeRef.current = 0;
 
-        audioEngine.playBGM();
+        audioEngine.playBGM(useGameStore.getState().equippedBgm);
 
         const timer = setInterval(() => {
             if (!engineState.current.isOver) {

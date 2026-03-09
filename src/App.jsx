@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import GameArea from './components/GameArea';
 import Leaderboard from './components/Leaderboard';
 import { useGameStore } from './store/gameStore';
-import { Trophy, LogIn, LogOut, User as UserIcon, Award, ShoppingCart, Share2, Users, Fingerprint } from 'lucide-react';
+import { Trophy, LogIn, LogOut, User as UserIcon, Award, ShoppingCart, Share2, Users, Fingerprint, Music } from 'lucide-react';
 import { subscribeToAuth, loginWithGoogle, logout, getUserProfile, syncStatsToCloud, syncAchievementsToCloud, upgradeToTeacher, joinClassUser, ensureUserDocument, incrementUserEffort } from './utils/userService';
 import AchievementToast from './components/AchievementToast';
 import AchievementDashboard from './components/AchievementDashboard';
@@ -15,6 +15,7 @@ import ResultShareCard from './components/ResultShareCard';
 import CampaignMap from './components/CampaignMap';
 import StoryCutscene from './components/StoryCutscene';
 import { CAMPAIGN_LEVELS } from './utils/levels';
+import { BGM_CHOICES } from './utils/constants';
 import { encryptData, decryptData } from './utils/crypto';
 
 function App() {
@@ -121,6 +122,8 @@ function App() {
 
     const userProfile = useGameStore(state => state.userProfile);
     const setUserProfile = useGameStore(state => state.setUserProfile);
+    const equippedBgm = useGameStore(state => state.equippedBgm);
+    const setEquippedBgm = useGameStore(state => state.setEquippedBgm);
 
     // Initial auth listener
     useEffect(() => {
@@ -472,6 +475,22 @@ function App() {
                                     登入同步紀錄
                                 </button>
                             )}
+                        </div>
+
+                        {/* BGM Selector */}
+                        <div className="flex justify-center items-center mb-8">
+                            <div className="flex items-center gap-2 bg-gray-950/60 py-2 px-4 rounded-full border border-pink-500/30 shadow-[0_0_15px_rgba(236,72,153,0.15)] hover:border-pink-500/60 transition-colors">
+                                <Music className="w-5 h-5 text-pink-400" />
+                                <select
+                                    value={equippedBgm}
+                                    onChange={(e) => setEquippedBgm(e.target.value)}
+                                    className="bg-transparent text-pink-300 font-bold outline-none cursor-pointer text-sm md:text-base appearance-none pr-2"
+                                >
+                                    {BGM_CHOICES.map(bgm => (
+                                        <option key={bgm.id} value={bgm.id} className="bg-gray-900 text-pink-300">{bgm.name}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
 
                         <div className="flex flex-wrap gap-4 justify-center items-center max-w-2xl mx-auto">
