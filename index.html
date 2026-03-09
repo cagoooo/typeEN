@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>英文字母打字遊戲 (Neon Arcade)</title>
+  <!-- Google Fonts: Noto Sans TC for general, Orbitron for Neon Arcade feel -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Orbitron:wght@400;700;900&family=Press+Start+2P&display=swap"
+    rel="stylesheet">
+</head>
+
+<body class="m-0 p-0 overflow-hidden bg-gray-900 text-white font-sans">
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+  <script>
+    // PWA 註冊與開發環境除錯邏輯
+    if ('serviceWorker' in navigator) {
+      const isLocalhost = Boolean(
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '[::1]' ||
+        window.location.hostname.match(
+          /^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/
+        )
+      );
+
+      if (isLocalhost) {
+        // 在 localhost 下註銷所有 SW，防止快取干擾 Vite HMR
+        navigator.serviceWorker.ready.then(registration => {
+          registration.unregister();
+        });
+      } else {
+        // 正式環境註冊 SW
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(err => {
+            console.error('SW registration failed: ', err);
+          });
+        });
+      }
+    }
+  </script>
+</body>
+
+</html>

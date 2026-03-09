@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英文字母打字練習遊戲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            overflow: hidden;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            height: 100vh;
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .letter {
+            position: absolute;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            transition: transform 0.2s ease-out, opacity 0.3s ease-out, text-shadow 0.2s ease-in-out;
+            user-select: none;
+        }
+        
+        .letter.hit {
+            transform: scale(2);
+            opacity: 0;
+        }
+
+        .letter.highlight-letter {
+            transform: scale(1.15);
+            text-shadow: 0 0 12px #fef08a, 0 0 20px #facc15;
+        }
+        
+        .game-container {
+            position: relative;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+        
+        .stats {
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            z-index: 5;
+        }
+        
+        .end-screen {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .btn {
+            transition: all 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* --- Styles for the polished finger hint UI --- */
+        #hands-hint {
+            pointer-events: none;
+            width: 90%;
+            max-width: 420px;
+            height: auto;
+            aspect-ratio: 420 / 180;
+        }
+
+        .finger {
+            fill: url(#finger-gradient);
+            stroke: rgba(0, 0, 0, 0.2);
+            stroke-width: 1;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.25));
+        }
+
+        .finger.highlight {
+            fill: url(#finger-highlight-gradient);
+            stroke: #fde047; /* yellow-200 */
+            transform: scale(1.08) translateY(-8px);
+            filter: drop-shadow(0px 5px 15px #facc15);
+        }
+        
+        .hand-base {
+            fill: url(#hand-base-gradient);
+            filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.2));
+        }
+        
+        .thumb {
+            fill: url(#finger-gradient);
+            stroke: rgba(0, 0, 0, 0.2);
+            stroke-width: 1;
+            filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.2));
+        }
+    </style>
+</head>
+<body class="m-0 p-0">
+    <div class="game-container" id="gameContainer">
+        <div class="absolute top-4 left-4 right-4 flex justify-between items-center stats">
+            <div class="bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm px-4 py-2 rounded-lg text-white font-bold">
+                <span id="completed">0</span>/<span id="total">26</span> 個字母
+            </div>
+            <div class="bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm px-4 py-2 rounded-lg text-white font-bold">
+                時間: <span id="timer">0</span>秒
+            </div>
+        </div>
+        
+        <!-- Polished Finger Hint Visualization -->
+        <div id="hands-hint" class="fixed bottom-3 md:bottom-5 left-1/2 -translate-x-1/2">
+            <svg viewBox="0 0 420 180" class="w-full h-full">
+                <defs>
+                    <linearGradient id="hand-base-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:rgba(255,255,255,0.4)" />
+                        <stop offset="100%" style="stop-color:rgba(255,255,255,0.2)" />
+                    </linearGradient>
+                    <linearGradient id="finger-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:rgba(255,255,255,0.5)" />
+                        <stop offset="100%" style="stop-color:rgba(255,255,255,0.3)" />
+                    </linearGradient>
+                    <linearGradient id="finger-highlight-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#fde047" /> <!-- yellow-200 -->
+                        <stop offset="100%" style="stop-color:#facc15" /> <!-- yellow-400 -->
+                    </linearGradient>
+                </defs>
+                <!-- Left Hand -->
+                <path class="hand-base" d="M165 170 C 190 120, 150 50, 100 60 C 50 70, 15 120, 30 170 Z"></path>
+                <path class="thumb" d="M158 135 C 170 110, 165 90, 150 95 C 135 100, 130 125, 140 145 Z"></path>
+                <path id="finger-left-pinky" class="finger" d="M55 115 C 45 80, 55 55, 65 60 C 75 65, 75 90, 65 120 Z"></path>
+                <path id="finger-left-ring" class="finger" d="M80 125 C 70 80, 80 35, 90 40 C 100 45, 105 90, 90 130 Z"></path>
+                <path id="finger-left-middle" class="finger" d="M105 135 C 95 80, 105 20, 115 25 C 125 30, 135 90, 120 140 Z"></path>
+                <path id="finger-left-index" class="finger" d="M130 130 C 125 80, 135 30, 145 35 C 155 40, 160 90, 145 135 Z"></path>
+
+                <!-- Right Hand -->
+                <path class="hand-base" d="M255 170 C 230 120, 270 50, 320 60 C 370 70, 405 120, 390 170 Z"></path>
+                <path class="thumb" d="M262 135 C 250 110, 255 90, 270 95 C 285 100, 290 125, 280 145 Z"></path>
+                <path id="finger-right-index" class="finger" d="M290 130 C 295 80, 285 30, 275 35 C 265 40, 260 90, 275 135 Z"></path>
+                <path id="finger-right-middle" class="finger" d="M315 135 C 325 80, 315 20, 305 25 C 295 30, 285 90, 300 140 Z"></path>
+                <path id="finger-right-ring" class="finger" d="M340 125 C 350 80, 340 35, 330 40 C 320 45, 315 90, 330 130 Z"></path>
+                <path id="finger-right-pinky" class="finger" d="M365 115 C 375 80, 365 55, 355 60 C 345 65, 345 90, 355 120 Z"></path>
+            </svg>
+        </div>
+    </div>
+    
+    <div id="startScreen" class="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-indigo-600 to-purple-700 z-10">
+        <h1 class="text-5xl md:text-6xl font-bold text-white mb-8 text-center px-4">英文字母<br>打字練習遊戲</h1>
+        <p class="text-xl text-white mb-8 text-center max-w-md px-4">在字母落到底部前輸入正確的按鍵。下方會有手指提示喔！</p>
+        <button id="startButton" class="btn bg-white text-indigo-700 font-bold py-3 px-8 rounded-full text-xl shadow-lg">
+            開始遊戲
+        </button>
+    </div>
+    
+    <div id="endScreen" class="end-screen absolute inset-0 flex flex-col items-center justify-center z-20 hidden">
+        <div class="bg-white rounded-xl p-8 max-w-md text-center">
+            <h2 class="text-3xl font-bold text-indigo-700 mb-4">遊戲完成！</h2>
+            <p class="text-xl mb-2">你已完成全部26個字母</p>
+            <p class="text-lg mb-6">用時: <span id="finalTime">0</span> 秒</p>
+            <button id="playAgainButton" class="btn bg-indigo-600 text-white font-bold py-3 px-8 rounded-full text-xl">
+                再玩一次
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameContainer = document.getElementById('gameContainer');
+            const startScreen = document.getElementById('startScreen');
+            const endScreen = document.getElementById('endScreen');
+            const startButton = document.getElementById('startButton');
+            const playAgainButton = document.getElementById('playAgainButton');
+            const completedElement = document.getElementById('completed');
+            const totalElement = document.getElementById('total');
+            const timerElement = document.getElementById('timer');
+            const finalTimeElement = document.getElementById('finalTime');
+            
+            const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+            const COLORS = [
+                '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', 
+                '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', 
+                '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef',
+                '#ec4899', '#f43f5e'
+            ];
+            const INITIAL_LETTER_Y_POS = -60;
+            const LETTER_SPAWN_MIN_DELAY = 500;
+            const LETTER_SPAWN_MAX_DELAY = 1500;
+            const LETTER_MIN_SPEED = 1;
+            const LETTER_MAX_SPEED = 2.5;
+
+            const fingerMap = {
+                'Q': 'left-pinky', 'A': 'left-pinky', 'Z': 'left-pinky',
+                'W': 'left-ring', 'S': 'left-ring', 'X': 'left-ring',
+                'E': 'left-middle', 'D': 'left-middle', 'C': 'left-middle',
+                'R': 'left-index', 'F': 'left-index', 'V': 'left-index', 'T': 'left-index', 'G': 'left-index', 'B': 'left-index',
+                'Y': 'right-index', 'H': 'right-index', 'N': 'right-index', 'U': 'right-index', 'J': 'right-index', 'M': 'right-index',
+                'I': 'right-middle', 'K': 'right-middle',
+                'O': 'right-ring', 'L': 'right-ring',
+                'P': 'right-pinky',
+            };
+
+            const fingerElements = {
+                'left-pinky': document.getElementById('finger-left-pinky'),
+                'left-ring': document.getElementById('finger-left-ring'),
+                'left-middle': document.getElementById('finger-left-middle'),
+                'left-index': document.getElementById('finger-left-index'),
+                'right-index': document.getElementById('finger-right-index'),
+                'right-middle': document.getElementById('finger-right-middle'),
+                'right-ring': document.getElementById('finger-right-ring'),
+                'right-pinky': document.getElementById('finger-right-pinky'),
+            };
+
+            let activeLetters = [];
+            let gameStarted = false;
+            let gameTime = 0;
+            let gameTimerInterval;
+            let animationFrameId;
+            let completedCount = 0;
+            let lettersToDrop = [];
+            
+            function updateHints() {
+                let lowestLetter = null;
+                activeLetters.forEach((letterObj) => {
+                    if (!lowestLetter || letterObj.yPos > lowestLetter.yPos) {
+                        lowestLetter = letterObj;
+                    }
+                });
+
+                if (!lowestLetter) {
+                    Object.values(fingerElements).forEach(el => el.classList.remove('highlight'));
+                    activeLetters.forEach(l => l.element.classList.remove('highlight-letter'));
+                    return;
+                }
+
+                const targetFingerId = fingerMap[lowestLetter.char.toUpperCase()];
+
+                for (const fingerId in fingerElements) {
+                    fingerElements[fingerId].classList.toggle('highlight', fingerId === targetFingerId);
+                }
+
+                activeLetters.forEach((letterObj) => {
+                    const letterFingerId = fingerMap[letterObj.char.toUpperCase()];
+                    letterObj.element.classList.toggle('highlight-letter', letterFingerId === targetFingerId);
+                });
+            }
+
+            function initializeGame() {
+                startScreen.classList.remove('hidden');
+                endScreen.classList.add('hidden');
+                gameStarted = false;
+                completedCount = 0;
+                gameTime = 0;
+                completedElement.textContent = completedCount;
+                timerElement.textContent = gameTime;
+                totalElement.textContent = ALPHABET.length;
+
+                document.querySelectorAll('.letter').forEach(el => el.remove());
+                activeLetters = [];
+                if (gameTimerInterval) clearInterval(gameTimerInterval);
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                updateHints();
+            }
+
+            function startGame() {
+                initializeGame();
+                startScreen.classList.add('hidden');
+                gameStarted = true;
+                
+                lettersToDrop = [...ALPHABET].sort(() => Math.random() - 0.5);
+                
+                gameTimerInterval = setInterval(() => {
+                    gameTime++;
+                    timerElement.textContent = gameTime;
+                }, 1000);
+                
+                dropLetterSequence();
+                animateLetters();
+            }
+            
+            function dropLetterSequence() {
+                if (!gameStarted || lettersToDrop.length === 0) return;
+                
+                const letterChar = lettersToDrop.pop();
+                createLetter(letterChar);
+                
+                if (lettersToDrop.length > 0) {
+                    const delay = Math.random() * (LETTER_SPAWN_MAX_DELAY - LETTER_SPAWN_MIN_DELAY) + LETTER_SPAWN_MIN_DELAY;
+                    setTimeout(dropLetterSequence, delay);
+                }
+            }
+            
+            function createLetter(char) {
+                const letterElement = document.createElement('div');
+                letterElement.className = 'letter text-4xl md:text-5xl text-white';
+                letterElement.textContent = char;
+                
+                const leftPercent = Math.random() * 85 + 7.5;
+                letterElement.style.left = `${leftPercent}%`;
+                letterElement.style.top = `${INITIAL_LETTER_Y_POS}px`;
+                
+                const colorIndex = Math.floor(Math.random() * COLORS.length);
+                letterElement.style.color = COLORS[colorIndex];
+                
+                gameContainer.appendChild(letterElement);
+                
+                activeLetters.push({
+                    char: char,
+                    element: letterElement,
+                    speed: Math.random() * (LETTER_MAX_SPEED - LETTER_MIN_SPEED) + LETTER_MIN_SPEED,
+                    yPos: INITIAL_LETTER_Y_POS 
+                });
+            }
+            
+            function animateLetters() {
+                if (!gameStarted) return;
+
+                activeLetters.forEach((letterObj) => {
+                    letterObj.yPos += letterObj.speed;
+                    letterObj.element.style.top = `${letterObj.yPos}px`;
+                    
+                    if (letterObj.yPos > window.innerHeight) {
+                        resetLetter(letterObj); 
+                    }
+                });
+                
+                updateHints();
+
+                animationFrameId = requestAnimationFrame(animateLetters);
+            }
+            
+            function resetLetter(letterObj) {
+                letterObj.yPos = INITIAL_LETTER_Y_POS;
+                letterObj.element.style.top = `${letterObj.yPos}px`;
+                
+                const leftPercent = Math.random() * 85 + 7.5;
+                letterObj.element.style.left = `${leftPercent}%`;
+                
+                letterObj.speed = Math.random() * (LETTER_MAX_SPEED - LETTER_MIN_SPEED) + LETTER_MIN_SPEED;
+            }
+            
+            function handleKeyPress(e) {
+                if (!gameStarted || e.repeat) return;
+                
+                const keyPressed = e.key.toUpperCase();
+                
+                let targetLetterIndex = -1;
+                let lowestYPos = -Infinity;
+
+                activeLetters.forEach((letterObj, index) => {
+                    if (letterObj.char === keyPressed && letterObj.yPos > lowestYPos) {
+                        lowestYPos = letterObj.yPos;
+                        targetLetterIndex = index;
+                    }
+                });
+                
+                if (targetLetterIndex !== -1) {
+                    const letterObj = activeLetters[targetLetterIndex];
+                    
+                    letterObj.element.classList.add('hit');
+                    
+                    activeLetters.splice(targetLetterIndex, 1);
+                    
+                    completedCount++;
+                    completedElement.textContent = completedCount;
+                    
+                    setTimeout(() => {
+                        letterObj.element.remove();
+                    }, 300);
+                    
+                    if (completedCount >= ALPHABET.length) {
+                        endGame(true);
+                    }
+                }
+            }
+            
+            function endGame(isWin) {
+                gameStarted = false;
+                clearInterval(gameTimerInterval);
+                cancelAnimationFrame(animationFrameId);
+                updateHints();
+                
+                if (isWin) {
+                    finalTimeElement.textContent = gameTime;
+                    endScreen.classList.remove('hidden');
+                } else {
+                    alert("遊戲結束！");
+                    initializeGame();
+                }
+            }
+            
+            startButton.addEventListener('click', startGame);
+            playAgainButton.addEventListener('click', startGame);
+            document.addEventListener('keydown', handleKeyPress);
+            
+            initializeGame();
+        });
+    </script>
+</body>
+</html>
+
