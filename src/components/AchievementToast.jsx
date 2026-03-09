@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { ACHIEVEMENTS } from '../utils/constants';
+import { playSound } from '../utils/audio';
 
 const AchievementToast = () => {
     const newUnlocked = useGameStore(state => state.newUnlocked);
@@ -27,9 +28,7 @@ const AchievementToast = () => {
 
                 // Play sound
                 try {
-                    const audio = new Audio('/sounds/achievement.mp3'); // Fallback if no howler or just use standard
-                    audio.volume = 0.5;
-                    audio.play().catch(e => console.log("Audio play prevented:", e));
+                    playSound('end');
                 } catch (e) { }
 
                 // Remove after delay

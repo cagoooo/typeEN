@@ -127,7 +127,6 @@ function App() {
                 // User is signed in
                 const profile = await getUserProfile(user.uid);
                 setUserProfile(profile);
-                setPlayerName(profile?.displayName || user.displayName || '');
 
                 // Check if there's a pending class code
                 const pendingClassCode = sessionStorage.getItem('pendingClassCode');
