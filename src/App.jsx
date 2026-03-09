@@ -703,9 +703,11 @@ function App() {
 
             {/* Toast Notification */}
             {toastMsg && (
-                <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] animate-bounce">
-                    <div className="bg-indigo-600/90 text-white px-6 py-3 rounded-full shadow-[0_0_20px_rgba(99,102,241,0.6)] backdrop-blur-md border border-indigo-400 font-sans font-bold whitespace-nowrap flex items-center gap-2">
-                        ✨ {toastMsg}
+                <div className="fixed top-20 left-0 w-full flex justify-center z-[100] pointer-events-none">
+                    <div className="animate-bounce">
+                        <div className="bg-indigo-600/90 text-white px-6 py-3 rounded-full shadow-[0_0_20px_rgba(99,102,241,0.6)] backdrop-blur-md border border-indigo-400 font-sans font-bold whitespace-nowrap flex items-center gap-2">
+                            ✨ {toastMsg}
+                        </div>
                     </div>
                 </div>
             )}

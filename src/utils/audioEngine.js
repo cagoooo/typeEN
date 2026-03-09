@@ -1,7 +1,11 @@
 import { Howl } from 'howler';
 
 // Store your MP3 files in the public folder and reference them here, e.g., '/audio/bgm1.mp3'
-const BGM_TRACKS = [];
+const BGM_TRACKS = [
+    'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a1b64cb1.mp3?filename=stranger-things-124008.mp3', // Synthwave / Retro
+    'https://cdn.pixabay.com/download/audio/2021/11/25/audio_108cc0edde.mp3?filename=retro-wave-style-track-61614.mp3', // Synthwave
+    'https://cdn.pixabay.com/download/audio/2022/03/10/audio_c8dec344af.mp3?filename=cyberpunk-synthwave-108849.mp3'  // Cyberpunk
+];
 
 class AudioEngine {
     constructor() {
