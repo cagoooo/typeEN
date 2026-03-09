@@ -290,6 +290,22 @@ const GameArea = ({ onGameEnd }) => {
                 playSound('miss');
                 resetCombo();
                 triggerShake();
+
+                // Anti-spam penalty
+                const newHealth = useGameStore.getState().deductHealth(1);
+                const canvasWidth = canvasRef.current ? canvasRef.current.width : window.innerWidth;
+                const canvasHeight = canvasRef.current ? canvasRef.current.height : window.innerHeight;
+                engineState.current.floatingTexts.push({
+                    x: canvasWidth / 2 + (Math.random() * 100 - 50),
+                    y: canvasHeight / 2 + (Math.random() * 100 - 50),
+                    text: '失誤 -1 HP',
+                    colorHex: '#ef4444',
+                    life: 0.8
+                });
+
+                if (newHealth <= 0) {
+                    endGame(false);
+                }
             }
         };
 
@@ -783,7 +799,6 @@ const GameArea = ({ onGameEnd }) => {
             <canvas
                 ref={canvasRef}
                 className="absolute inset-0 z-20 w-full h-full touch-none"
-                onPointerDown={handleCanvasPointerDown}
             />
 
             <HandsHint activeLetters={syncLetters} />

@@ -39,7 +39,7 @@ export const logout = async () => {
 };
 
 // Create or update user document upon login
-const ensureUserDocument = async (user) => {
+export const ensureUserDocument = async (user) => {
     const userRef = doc(db, USERS_COLLECTION, user.uid);
     const userSnap = await getDoc(userRef);
 

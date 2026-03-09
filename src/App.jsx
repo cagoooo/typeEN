@@ -3,7 +3,7 @@ import GameArea from './components/GameArea';
 import Leaderboard from './components/Leaderboard';
 import { useGameStore } from './store/gameStore';
 import { Trophy, LogIn, LogOut, User as UserIcon, Award, ShoppingCart, Share2, Users, Fingerprint } from 'lucide-react';
-import { subscribeToAuth, loginWithGoogle, logout, getUserProfile, syncStatsToCloud, syncAchievementsToCloud, upgradeToTeacher, joinClassUser } from './utils/userService';
+import { subscribeToAuth, loginWithGoogle, logout, getUserProfile, syncStatsToCloud, syncAchievementsToCloud, upgradeToTeacher, joinClassUser, ensureUserDocument } from './utils/userService';
 import AchievementToast from './components/AchievementToast';
 import AchievementDashboard from './components/AchievementDashboard';
 import Shop from './components/Shop';
@@ -124,6 +124,9 @@ function App() {
     useEffect(() => {
         const unsubscribe = subscribeToAuth(async (user) => {
             if (user) {
+                // Ensure document exists to avoid race condition on first login
+                await ensureUserDocument(user);
+
                 // User is signed in
                 const profile = await getUserProfile(user.uid);
                 setUserProfile(profile);
