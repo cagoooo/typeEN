@@ -8,6 +8,8 @@ const BGM_TRACKS = [
     'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'  // Mid-tempo Cyberpunk
 ];
 
+const synth = window.speechSynthesis;
+
 class AudioEngine {
     constructor() {
         this.bgms = [];
@@ -25,6 +27,15 @@ class AudioEngine {
             preload: true,
             html5: true, // Best practice for streaming long BGM without blocking memory
         }));
+
+        this.bossBgm = new Howl({
+            src: ['https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3'], // Intense Boss music
+            loop: true,
+            volume: 0.6,
+            preload: true,
+            html5: true,
+        });
+
         this.initialized = true;
     }
 
@@ -53,6 +64,23 @@ class AudioEngine {
         if (this.currentBgm) {
             this.currentBgm.stop();
             this.currentBgm = null;
+        }
+        if (this.bossBgm && this.bossBgm.playing()) {
+            this.bossBgm.stop();
+        }
+    }
+
+    playBossBGM() {
+        this.init();
+        if (this.currentBgm && this.currentBgm.playing()) {
+            this.currentBgm.stop();
+        }
+        if (!this.bossBgm.playing()) {
+            this.bossBgm.rate(1.0);
+            this.bossBgm.volume(0.6);
+            this.bossBgm.play();
+            // keep currentBgm ref as bossBgm so updateDynamics works on it
+            this.currentBgm = this.bossBgm;
         }
     }
 
@@ -91,6 +119,27 @@ class AudioEngine {
         }
 
         this.currentBgm.volume(targetVolume);
+    }
+
+    playComboVoice(combo) {
+        if (!synth) return;
+
+        let text = "";
+        if (combo === 10) text = "Good!";
+        else if (combo === 20) text = "Great!";
+        else if (combo === 50) text = "Unstoppable!";
+        else if (combo === 100) text = "Godlike!";
+
+        if (text) {
+            // Cancel any ongoing speech to prioritize the combo announcer
+            synth.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.pitch = 0.6; // Slightly deeper, robotic tone for cyborg/neon feel
+            utterance.rate = 1.3;  // Fast pacing
+            utterance.volume = 0.9;
+            utterance.lang = 'en-US';
+            synth.speak(utterance);
+        }
     }
 }
 

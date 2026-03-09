@@ -11,6 +11,7 @@ import TeacherDashboard from './components/TeacherDashboard';
 import JoinClassModal from './components/JoinClassModal';
 import SharedProfile from './components/SharedProfile';
 import SharePreview from './components/SharePreview';
+import ResultShareCard from './components/ResultShareCard';
 import CampaignMap from './components/CampaignMap';
 import StoryCutscene from './components/StoryCutscene';
 import { CAMPAIGN_LEVELS } from './utils/levels';
@@ -64,6 +65,7 @@ function App() {
     // Custom Modal States
     const [showTeacherPrompt, setShowTeacherPrompt] = useState(false);
     const [teacherCodeInput, setTeacherCodeInput] = useState('');
+    const [showResultShare, setShowResultShare] = useState(false);
 
     const startTeacherPress = () => {
         if (!userProfile || userProfile.role === 'teacher') return;
@@ -387,8 +389,8 @@ function App() {
                                 <div className="flex items-center gap-4 bg-gray-950/80 p-3 rounded-full border border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.2)] backdrop-blur-md relative overflow-hidden group/profile">
                                     {/* Long Press Progress Bar (CSS Animated) */}
                                     <div
-                                        className={`absolute bottom-0 left-0 h-1 bg-gradient-to-r from-emerald-400 to-cyan-400 pointer-events-none transition-all ease-linear ${isTeacherPressing ? 'w-full duration-[3000ms]' : 'w-0 duration-[100ms]'
-                                            }`}
+                                        className={`absolute bottom - 0 left - 0 h - 1 bg - gradient - to - r from - emerald - 400 to - cyan - 400 pointer - events - none transition - all ease - linear ${isTeacherPressing ? 'w-full duration-[3000ms]' : 'w-0 duration-[100ms]'
+                                            } `}
                                     />
                                     <div
                                         className="flex items-center gap-3 pl-2 cursor-pointer select-none touch-none hover:bg-white/5 rounded-full transition-colors pr-2 py-1 -ml-2 -my-1"
@@ -529,14 +531,14 @@ function App() {
                             <div className="flex flex-col items-center gap-2">
                                 <span className="text-emerald-400 font-bold">[初學者]</span>
                                 <div className="space-x-3">
-                                    <span>🏆 <span className="text-emerald-300 font-bold">{(!bestStats.beginnerTime || bestStats.beginnerTime === 999) ? '--' : `${bestStats.beginnerTime}s`}</span></span>
+                                    <span>🏆 <span className="text-emerald-300 font-bold">{(!bestStats.beginnerTime || bestStats.beginnerTime === 999) ? '--' : `${bestStats.beginnerTime} s`}</span></span>
                                     <span>🔥 <span className="text-orange-400 font-bold">{bestStats.beginnerCombo || 0}</span></span>
                                 </div>
                             </div>
                             <div className="flex flex-col items-center gap-2">
                                 <span className="text-indigo-400 font-bold">[一般模式]</span>
                                 <div className="space-x-3">
-                                    <span>🏆 <span className="text-indigo-300 font-bold">{bestStats.normalTime === 999 ? '--' : `${bestStats.normalTime}s`}</span></span>
+                                    <span>🏆 <span className="text-indigo-300 font-bold">{bestStats.normalTime === 999 ? '--' : `${bestStats.normalTime} s`}</span></span>
                                     <span>🔥 <span className="text-orange-400 font-bold">{bestStats.normalCombo}</span></span>
                                 </div>
                             </div>
@@ -550,7 +552,7 @@ function App() {
                             <div className="flex flex-col items-center gap-2">
                                 <span className="text-yellow-400 font-bold">[單字挑戰]</span>
                                 <div className="space-x-3">
-                                    <span>🏆 <span className="text-yellow-300 font-bold">{(!bestStats.wordTime || bestStats.wordTime === 999) ? '--' : `${bestStats.wordTime}s`}</span></span>
+                                    <span>🏆 <span className="text-yellow-300 font-bold">{(!bestStats.wordTime || bestStats.wordTime === 999) ? '--' : `${bestStats.wordTime} s`}</span></span>
                                     <span>🔥 <span className="text-orange-400 font-bold">{bestStats.wordCombo || 0}</span></span>
                                 </div>
                             </div>
@@ -636,6 +638,15 @@ function App() {
                                 </>
                             )}
                         </div>
+
+                        <div className="flex justify-center mt-6">
+                            <button
+                                onClick={() => setShowResultShare(true)}
+                                className="flex items-center gap-2 px-6 py-3 bg-fuchsia-600/20 hover:bg-fuchsia-600/40 border-2 border-fuchsia-500/50 text-fuchsia-400 font-bold rounded-full text-lg transition-all duration-300 hover:scale-105 shadow-[0_0_15px_rgba(217,70,239,0.2)] hover:shadow-[0_0_25px_rgba(217,70,239,0.5)] active:scale-95 tracking-wider"
+                            >
+                                <Share2 className="w-5 h-5" /> 產生專屬戰報
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -682,12 +693,22 @@ function App() {
                     profile={userProfile}
                     onClose={() => setShowSharePreview(false)}
                     onShare={() => {
-                        const shareUrl = `${window.location.origin}${window.location.pathname}?uid=${userProfile.uid}`;
+                        const shareUrl = `${window.location.origin}${window.location.pathname}?uid = ${userProfile.uid} `;
                         navigator.clipboard.writeText(shareUrl).then(() => {
                             setShowSharePreview(false);
                             showToast('個人成績網址已複製到剪貼簿！📋');
                         });
                     }}
+                />
+            )}
+
+            {/* Result Share Card Modal */}
+            {showResultShare && gameResult && (
+                <ResultShareCard
+                    result={gameResult}
+                    profile={userProfile}
+                    mode={useGameStore.getState().mode}
+                    onClose={() => setShowResultShare(false)}
                 />
             )}
 

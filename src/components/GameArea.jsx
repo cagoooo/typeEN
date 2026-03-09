@@ -151,6 +151,7 @@ const GameArea = ({ onGameEnd }) => {
         }
 
         if (hitLetter.type === 'BOSS') {
+            hitLetter.activeIndex += 1;
             hitLetter.hp -= 1;
             playSound('hit');
             triggerShake();
@@ -164,7 +165,7 @@ const GameArea = ({ onGameEnd }) => {
                 });
             }
 
-            if (hitLetter.hp <= 0) {
+            if (hitLetter.activeIndex >= hitLetter.char.length || hitLetter.hp <= 0) {
                 engineState.current.letters.splice(targetIdx, 1);
                 playSound('hit');
                 for (let i = 0; i < 50; i++) {
@@ -176,6 +177,9 @@ const GameArea = ({ onGameEnd }) => {
                 }
                 engineState.current.floatingTexts.push({ x: realX, y: realY - 30, text: 'BOSS DEFEATED!', colorHex: '#facc15', life: 1.5 });
                 incrementCompleted();
+
+                // Return BGM to normal after defeating boss
+                audioEngine.playBGM();
             }
             return;
         }
@@ -230,16 +234,16 @@ const GameArea = ({ onGameEnd }) => {
 
         engineState.current.floatingTexts.push({ x: realX, y: realY, text: hitTextStr, colorHex: hitColorHex, life: 1.0 });
 
-        const pCount = pType === 'PERFECT' ? 24 : pType === 'HEAL' ? 15 : 12;
-        const pSpeed = pType === 'PERFECT' ? 8 : pType === 'HEAL' ? 4 : 5;
+        const pCount = pType === 'PERFECT' ? 48 : pType === 'HEAL' ? 30 : 25;
+        const pSpeed = pType === 'PERFECT' ? 14 : pType === 'HEAL' ? 6 : 9;
         for (let i = 0; i < pCount; i++) {
             engineState.current.particles.push({
                 x: realX, y: realY,
                 vx: (Math.random() - 0.5) * pSpeed,
                 vy: (Math.random() - 0.5) * pSpeed,
-                radius: Math.random() * 3 + 1,
+                radius: Math.random() * 4 + 1,
                 color: hitLetter.type === 'HEAL' ? '#fbbf24' : hitLetter.color,
-                life: 1.0,
+                life: 1.0 + Math.random() * 0.5,
                 type: 'NORMAL'
             });
         }
@@ -277,7 +281,7 @@ const GameArea = ({ onGameEnd }) => {
             let lowestY = -Infinity;
 
             engineState.current.letters.forEach((l, idx) => {
-                const targetChar = l.type === 'WORD' ? l.char[l.activeIndex] : l.char;
+                const targetChar = (l.type === 'WORD' || l.type === 'BOSS') ? l.char[l.activeIndex] : l.char;
                 if (targetChar === key && l.yPos > lowestY) {
                     lowestY = l.yPos;
                     targetIdx = idx;
@@ -374,18 +378,23 @@ const GameArea = ({ onGameEnd }) => {
 
                 // Spawn BOSS every 45 seconds in ENDLESS mode
                 if (useGameStore.getState().mode === 'ENDLESS' && timeRef.current > 0 && timeRef.current % 45 === 0) {
-                    const char = ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+                    const bossWords = ["TERMINATOR", "OBLITERATION", "CYBERSPACE", "SYNCHRONIZE", "OVERCLOCKING"];
+                    const bossWord = bossWords[Math.floor(Math.random() * bossWords.length)];
                     engineState.current.letters.push({
                         id: 'BOSS_' + Date.now(),
-                        char,
+                        char: bossWord,
+                        activeIndex: 0,
                         type: 'BOSS',
-                        hp: 15,
-                        maxHp: 15,
-                        xPercent: Math.random() * 60 + 20,
+                        hp: bossWord.length,
+                        maxHp: bossWord.length,
+                        xPercent: 50,
                         yPos: -150,
                         color: '#facc15',
                         speed: 0.8
                     });
+
+                    audioEngine.playBossBGM();
+
 
                     const canvasWidth = canvasRef.current ? canvasRef.current.width : window.innerWidth;
                     const canvasHeight = canvasRef.current ? canvasRef.current.height : window.innerHeight;
@@ -407,18 +416,21 @@ const GameArea = ({ onGameEnd }) => {
 
                 // Campaign BOSS spawning
                 if (campaignMode === 'CAMPAIGN' && lc && lc.objective.type === 'BOSS' && timeRef.current === 2) {
-                    const char = ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+                    const bossWord = lc.config.bossWord || "NEUROMANCER";
                     engineState.current.letters.push({
                         id: 'BOSS_CAMPAIGN_' + Date.now(),
-                        char: char,
+                        char: bossWord,
+                        activeIndex: 0,
                         type: 'BOSS',
-                        hp: 25, // tough boss
-                        maxHp: 25,
+                        hp: bossWord.length,
+                        maxHp: bossWord.length,
                         xPercent: 50,
                         yPos: -150,
                         color: '#facc15',
                         speed: lc.config.speed * 0.6
                     });
+
+                    audioEngine.playBossBGM();
                     const canvasWidth = canvasRef.current ? canvasRef.current.width : window.innerWidth;
                     engineState.current.floatingTexts.push({
                         x: canvasWidth / 2, y: 200,
@@ -610,13 +622,16 @@ const GameArea = ({ onGameEnd }) => {
                     } else if (l.type === 'BOSS') {
                         const x = (l.xPercent / 100) * width;
                         const y = l.yPos;
-                        const bossSize = 120;
                         const isHighlight = l.id === highlightId;
 
                         ctx.save();
-                        ctx.font = "bold 64px 'Orbitron', sans-serif";
+                        ctx.font = "bold 48px 'Orbitron', sans-serif";
+                        const textWidth = ctx.measureText(l.char).width;
+                        const bossWidth = Math.max(200, textWidth + 60);
+                        const bossHeight = 80;
+
                         ctx.translate(x, y);
-                        if (isHighlight) ctx.scale(1.1, 1.1);
+                        if (isHighlight) ctx.scale(1.05, 1.05);
 
                         ctx.shadowColor = l.color;
                         ctx.shadowBlur = isHighlight ? 40 : 20;
@@ -624,23 +639,41 @@ const GameArea = ({ onGameEnd }) => {
                         ctx.strokeStyle = '#ef4444';
                         ctx.lineWidth = 4;
 
-                        drawRoundedRect(ctx, -bossSize / 2, -bossSize / 2, bossSize, bossSize, 20);
+                        drawRoundedRect(ctx, -bossWidth / 2, -bossHeight / 2, bossWidth, bossHeight, 15);
                         ctx.fill();
                         ctx.stroke();
 
                         const hpPercent = Math.max(0, l.hp / l.maxHp);
                         ctx.fillStyle = '#ef4444';
                         ctx.shadowBlur = 0;
-                        ctx.fillRect(-50, -bossSize / 2 - 20, 100 * hpPercent, 8);
+                        ctx.fillRect(- bossWidth / 2 + 10, -bossHeight / 2 - 15, (bossWidth - 20) * hpPercent, 6);
                         ctx.strokeStyle = '#ffffff';
                         ctx.lineWidth = 1;
-                        ctx.strokeRect(-50, -bossSize / 2 - 20, 100, 8);
+                        ctx.strokeRect(- bossWidth / 2 + 10, -bossHeight / 2 - 15, bossWidth - 20, 6);
 
-                        ctx.shadowBlur = 10;
-                        ctx.fillStyle = '#ffffff';
-                        ctx.textAlign = 'center';
+                        ctx.shadowBlur = 15;
                         ctx.textBaseline = 'middle';
-                        ctx.fillText(l.char, 0, 0);
+
+                        // Draw multi-colored word
+                        const completedPart = l.char.substring(0, l.activeIndex);
+                        const currentPart = l.char.substring(l.activeIndex, l.activeIndex + 1);
+                        const remainingPart = l.char.substring(l.activeIndex + 1);
+
+                        ctx.textAlign = 'left';
+                        let currentX = -textWidth / 2;
+
+                        ctx.fillStyle = '#6b7280';
+                        ctx.fillText(completedPart, currentX, 0);
+                        currentX += ctx.measureText(completedPart).width;
+
+                        if (currentPart) {
+                            ctx.fillStyle = '#ef4444';
+                            ctx.fillText(currentPart, currentX, 0);
+                            currentX += ctx.measureText(currentPart).width;
+                        }
+
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillText(remainingPart, currentX, 0);
 
                         ctx.restore();
                     }
@@ -725,6 +758,11 @@ const GameArea = ({ onGameEnd }) => {
 
     useEffect(() => {
         audioEngine.updateDynamics(combo, health);
+        if (combo >= 10 && (combo === 10 || combo === 20 || combo === 50 || combo === 100)) {
+            // Only trigger voice if we specifically hit these milestones EXACTLY.
+            // Since this useEffect triggers on combo change, whencombo === 10, it plays.
+            audioEngine.playComboVoice(combo);
+        }
     }, [combo, health]);
 
     let gridClass = 'bg-grid-neon opacity-50';
@@ -749,7 +787,7 @@ const GameArea = ({ onGameEnd }) => {
             if (!engineState.current.isOver) {
                 // shallow copy to avoid heavy clones, just needed for HandsHint logic over char mapping
                 setSyncLetters(engineState.current.letters.map(l => ({
-                    char: l.type === 'WORD' ? l.char[l.activeIndex] : l.char,
+                    char: (l.type === 'WORD' || l.type === 'BOSS') ? l.char[l.activeIndex] : l.char,
                     yPos: l.yPos
                 })));
             }
