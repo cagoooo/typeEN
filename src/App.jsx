@@ -3,7 +3,7 @@ import GameArea from './components/GameArea';
 import Leaderboard from './components/Leaderboard';
 import { useGameStore } from './store/gameStore';
 import { Trophy, LogIn, LogOut, User as UserIcon, Award, ShoppingCart, Share2, Users, Fingerprint } from 'lucide-react';
-import { subscribeToAuth, loginWithGoogle, logout, getUserProfile, syncStatsToCloud, syncAchievementsToCloud, upgradeToTeacher, joinClassUser, ensureUserDocument } from './utils/userService';
+import { subscribeToAuth, loginWithGoogle, logout, getUserProfile, syncStatsToCloud, syncAchievementsToCloud, upgradeToTeacher, joinClassUser, ensureUserDocument, incrementUserEffort } from './utils/userService';
 import AchievementToast from './components/AchievementToast';
 import AchievementDashboard from './components/AchievementDashboard';
 import Shop from './components/Shop';
@@ -342,6 +342,8 @@ function App() {
             // Push updated stats
             const stateNow = useGameStore.getState();
             syncStatsToCloud(currentUser.uid, stateNow.bestStats || bestStats);
+            // Log effort (play count and time)
+            incrementUserEffort(currentUser.uid, result.time || 0);
 
             // Update coins directly 
             if (earnedCoins > 0) {

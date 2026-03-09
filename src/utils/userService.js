@@ -1,6 +1,6 @@
 import { auth, db, googleProvider } from './firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, addDoc, query, where, getDocs, orderBy, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, addDoc, query, where, getDocs, orderBy, arrayUnion, increment } from 'firebase/firestore';
 
 const USERS_COLLECTION = 'users';
 const CLASSES_COLLECTION = 'classes';
@@ -94,6 +94,7 @@ export const syncStatsToCloud = async (uid, localStats) => {
 
         // Merge logic: keep the best records
         const mergedStats = {
+            ...cloudStats, // keep properties like playCount and totalPlayTime unaffected by this blind merge
             beginnerTime: Math.min(localStats.beginnerTime || 999, cloudStats.beginnerTime || 999),
             normalTime: Math.min(localStats.normalTime || 999, cloudStats.normalTime || 999),
             wordTime: Math.min(localStats.wordTime || 999, cloudStats.wordTime || 999),
@@ -106,6 +107,20 @@ export const syncStatsToCloud = async (uid, localStats) => {
         });
 
         return mergedStats;
+    }
+};
+
+// Increment user effort (play count and total playtime)
+export const incrementUserEffort = async (uid, playTimeSeconds) => {
+    if (!uid) return;
+    try {
+        const userRef = doc(db, USERS_COLLECTION, uid);
+        await updateDoc(userRef, {
+            "stats.playCount": increment(1),
+            "stats.totalPlayTime": increment(playTimeSeconds || 0)
+        });
+    } catch (e) {
+        console.error("Failed to increment user effort", e);
     }
 };
 

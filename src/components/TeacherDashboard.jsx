@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Users, RefreshCw, Copy, Check, QrCode } from 'lucide-react';
+import { X, Plus, Users, RefreshCw, Copy, Check, QrCode, Download } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { getTeacherClasses, createClass, getClassStudents } from '../utils/userService';
 
@@ -59,6 +59,35 @@ const TeacherDashboard = ({ userProfile, onClose }) => {
         navigator.clipboard.writeText(code);
         setCopiedCode(code);
         setTimeout(() => setCopiedCode(null), 2000);
+    };
+
+    const handleExportCSV = () => {
+        if (!selectedClass || !students.length) return;
+
+        const headers = ['學生姓名', 'Email', '初學者最佳(s)', '一般最佳(s)', '單字挑戰最佳(s)', '無盡生存(s)', '總遊玩次數', '總遊玩時長(s)', '成就數量'];
+
+        const rows = students.map(student => [
+            `"${student.displayName || '未命名'}"`,
+            `"${student.email || ''}"`,
+            student.stats?.beginnerTime === 999 ? 'N/A' : (student.stats?.beginnerTime || 'N/A'),
+            student.stats?.normalTime === 999 ? 'N/A' : (student.stats?.normalTime || 'N/A'),
+            student.stats?.wordTime === 999 ? 'N/A' : (student.stats?.wordTime || 'N/A'),
+            student.stats?.endlessTime || 0,
+            student.stats?.playCount || 0,
+            student.stats?.totalPlayTime || 0,
+            student.achievements?.length || 0
+        ]);
+
+        // Add BOM for correct Excel UTF-8 display
+        const csvContent = "\uFEFF" + [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `${selectedClass.name}_成績匯出_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     return (
@@ -155,6 +184,15 @@ const TeacherDashboard = ({ userProfile, onClose }) => {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button
+                                            onClick={handleExportCSV}
+                                            disabled={students.length === 0}
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-900/40 hover:bg-blue-800/60 text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm transition-colors border border-blue-700 hover:border-blue-500/50"
+                                            title="匯出全班成績與努力紀錄 CSV"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            匯出 CSV
+                                        </button>
+                                        <button
                                             onClick={() => setShowQrModal(true)}
                                             className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-emerald-900/30 text-emerald-400 rounded-lg text-sm transition-colors border border-gray-700 hover:border-emerald-500/50"
                                             title="顯示加入班級 QR Code"
@@ -217,6 +255,14 @@ const TeacherDashboard = ({ userProfile, onClose }) => {
                                                         <div className="flex justify-between items-center group">
                                                             <span className="text-gray-400 font-sans">無盡生存:</span>
                                                             <span className="text-fuchsia-400 font-bold bg-fuchsia-500/10 px-2 py-0.5 rounded transition-colors group-hover:bg-fuchsia-500/20">{student.stats?.endlessTime || 0}s</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center group pt-2 border-t border-gray-800 mt-2">
+                                                            <span className="text-gray-400 font-sans">總遊玩次數:</span>
+                                                            <span className="text-blue-400 font-bold bg-blue-500/10 px-2 py-0.5 rounded transition-colors group-hover:bg-blue-500/20">{student.stats?.playCount || 0} 回</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center group">
+                                                            <span className="text-gray-400 font-sans">總遊玩時長:</span>
+                                                            <span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded transition-colors group-hover:bg-emerald-500/20">{Math.floor((student.stats?.totalPlayTime || 0) / 60)} 分 {(student.stats?.totalPlayTime || 0) % 60} 秒</span>
                                                         </div>
                                                         <div className="flex justify-between items-center pt-2 border-t border-gray-800 mt-2">
                                                             <span className="text-gray-400 font-sans">成就獎章:</span>
