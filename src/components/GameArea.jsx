@@ -469,6 +469,9 @@ const GameArea = ({ onGameEnd }) => {
                 }
 
                 engineState.current.spawnTimeout = setTimeout(spawnSequence, delay);
+                engineState.current.isSpawning = true;
+            } else {
+                engineState.current.isSpawning = false;
             }
         };
         // Ensure spawnSequence can be re-triggered from outside
@@ -550,10 +553,8 @@ const GameArea = ({ onGameEnd }) => {
                         lettersToDropRef.current.unshift(l.char);
 
                         // Ensure the spawn sequence is kept alive if it's currently empty
-                        if (!engineState.current.isOver) {
-                            if (lettersToDropRef.current.length > 0 && engineState.current.letters.length === 0) {
-                                engineState.current.triggerSpawn();
-                            }
+                        if (!engineState.current.isOver && !engineState.current.isSpawning) {
+                            engineState.current.triggerSpawn();
                         }
                     }
                 } else {
@@ -572,13 +573,18 @@ const GameArea = ({ onGameEnd }) => {
                         const size = isWord ? Math.max(64, textWidth + 40) : 64;
 
                         ctx.translate(x, y);
-                        if (isHighlight) ctx.scale(1.15, 1.15);
 
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-                        ctx.strokeStyle = l.color;
-                        ctx.lineWidth = 2;
-                        ctx.shadowColor = l.color;
-                        ctx.shadowBlur = isHighlight ? 20 : 10;
+                        let currentScale = 1;
+                        if (isHighlight) {
+                            currentScale = 1.25 + Math.sin(currentTime / 150) * 0.05;
+                            ctx.scale(currentScale, currentScale);
+                        }
+
+                        ctx.fillStyle = isHighlight ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.1)';
+                        ctx.strokeStyle = isHighlight ? '#ffffff' : l.color;
+                        ctx.lineWidth = isHighlight ? 4 : 2;
+                        ctx.shadowColor = isHighlight ? '#ffffff' : l.color;
+                        ctx.shadowBlur = isHighlight ? 25 + Math.sin(currentTime / 150) * 10 : 10;
 
                         drawRoundedRect(ctx, -size / 2, -boxHeight / 2, size, boxHeight, 12);
                         ctx.fill();
@@ -631,13 +637,16 @@ const GameArea = ({ onGameEnd }) => {
                         const bossHeight = 80;
 
                         ctx.translate(x, y);
-                        if (isHighlight) ctx.scale(1.05, 1.05);
+                        if (isHighlight) {
+                            const currentScale = 1.1 + Math.sin(currentTime / 150) * 0.02;
+                            ctx.scale(currentScale, currentScale);
+                        }
 
-                        ctx.shadowColor = l.color;
-                        ctx.shadowBlur = isHighlight ? 40 : 20;
+                        ctx.shadowColor = isHighlight ? '#ffffff' : l.color;
+                        ctx.shadowBlur = isHighlight ? 50 + Math.sin(currentTime / 150) * 15 : 20;
                         ctx.fillStyle = 'rgba(20, 0, 0, 0.8)';
-                        ctx.strokeStyle = '#ef4444';
-                        ctx.lineWidth = 4;
+                        ctx.strokeStyle = isHighlight ? '#ffffff' : '#ef4444';
+                        ctx.lineWidth = isHighlight ? 6 : 4;
 
                         drawRoundedRect(ctx, -bossWidth / 2, -bossHeight / 2, bossWidth, bossHeight, 15);
                         ctx.fill();

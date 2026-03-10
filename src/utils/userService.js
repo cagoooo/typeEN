@@ -99,6 +99,16 @@ export const syncStatsToCloud = async (uid, localStats) => {
             normalTime: Math.min(localStats.normalTime || 999, cloudStats.normalTime || 999),
             wordTime: Math.min(localStats.wordTime || 999, cloudStats.wordTime || 999),
             endlessTime: Math.max(localStats.endlessTime || 0, cloudStats.endlessTime || 0),
+
+            beginnerCombo: Math.max(localStats.beginnerCombo || 0, cloudStats.beginnerCombo || 0),
+            normalCombo: Math.max(localStats.normalCombo || 0, cloudStats.normalCombo || 0),
+            wordCombo: Math.max(localStats.wordCombo || 0, cloudStats.wordCombo || 0),
+            endlessCombo: Math.max(localStats.endlessCombo || 0, cloudStats.endlessCombo || 0),
+
+            beginnerCompleted: Math.max(localStats.beginnerCompleted || 0, cloudStats.beginnerCompleted || 0),
+            normalCompleted: Math.max(localStats.normalCompleted || 0, cloudStats.normalCompleted || 0),
+            wordCompleted: Math.max(localStats.wordCompleted || 0, cloudStats.wordCompleted || 0),
+            endlessCompleted: Math.max(localStats.endlessCompleted || 0, cloudStats.endlessCompleted || 0),
         };
 
         await updateDoc(userRef, {

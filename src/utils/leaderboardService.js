@@ -35,7 +35,15 @@ export const getLeaderboard = async (gameMode, maxResults = 100) => {
                 endlessTime: data.stats?.endlessTime,
                 normalTime: data.stats?.normalTime,
                 wordTime: data.stats?.wordTime,
-                beginnerTime: data.stats?.beginnerTime
+                beginnerTime: data.stats?.beginnerTime,
+                endlessCombo: data.stats?.endlessCombo,
+                normalCombo: data.stats?.normalCombo,
+                wordCombo: data.stats?.wordCombo,
+                beginnerCombo: data.stats?.beginnerCombo,
+                endlessCompleted: data.stats?.endlessCompleted,
+                normalCompleted: data.stats?.normalCompleted,
+                wordCompleted: data.stats?.wordCompleted,
+                beginnerCompleted: data.stats?.beginnerCompleted
             });
         });
 

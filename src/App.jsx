@@ -269,67 +269,85 @@ function App() {
             }
         }
 
+        let statsToSync = { ...bestStats };
+
         if (state.mode === 'BEGINNER' && result.isWin) {
-            let newStats = { ...bestStats };
             let improved = false;
             // Beginner logic: we want lowest time and highest combo, just like normal
             if (result.time < (bestStats.beginnerTime || 999)) {
-                newStats.beginnerTime = result.time;
+                statsToSync.beginnerTime = result.time;
+                statsToSync.beginnerCompleted = result.completed;
                 improved = true;
             }
             if (result.maxCombo > (bestStats.beginnerCombo || 0)) {
-                newStats.beginnerCombo = result.maxCombo;
+                statsToSync.beginnerCombo = result.maxCombo;
+                improved = true;
+            }
+            if (result.completed > (bestStats.beginnerCompleted || 0)) {
+                statsToSync.beginnerCompleted = result.completed;
                 improved = true;
             }
             if (improved) {
-                setBestStats(newStats);
-                localStorage.setItem('typeEN_stats', encryptData(newStats));
+                setBestStats(statsToSync);
+                localStorage.setItem('typeEN_stats', encryptData(statsToSync));
             }
         } else if (state.mode === 'NORMAL' && result.isWin) {
-            let newStats = { ...bestStats };
             let improved = false;
             if (result.time < bestStats.normalTime) {
-                newStats.normalTime = result.time;
+                statsToSync.normalTime = result.time;
+                statsToSync.normalCompleted = result.completed;
                 improved = true;
             }
             if (result.maxCombo > bestStats.normalCombo) {
-                newStats.normalCombo = result.maxCombo;
+                statsToSync.normalCombo = result.maxCombo;
+                improved = true;
+            }
+            if (result.completed > (bestStats.normalCompleted || 0)) {
+                statsToSync.normalCompleted = result.completed;
                 improved = true;
             }
             if (improved) {
-                setBestStats(newStats);
-                localStorage.setItem('typeEN_stats', encryptData(newStats));
+                setBestStats(statsToSync);
+                localStorage.setItem('typeEN_stats', encryptData(statsToSync));
             }
         } else if (state.mode === 'ENDLESS') {
-            let newStats = { ...bestStats };
             let improved = false;
             // Endless tracks MAX time survived
             if (result.time > bestStats.endlessTime) {
-                newStats.endlessTime = result.time;
+                statsToSync.endlessTime = result.time;
+                statsToSync.endlessCompleted = result.completed;
                 improved = true;
             }
             if (result.maxCombo > bestStats.endlessCombo) {
-                newStats.endlessCombo = result.maxCombo;
+                statsToSync.endlessCombo = result.maxCombo;
+                improved = true;
+            }
+            if (result.completed > (bestStats.endlessCompleted || 0)) {
+                statsToSync.endlessCompleted = result.completed;
                 improved = true;
             }
             if (improved) {
-                setBestStats(newStats);
-                localStorage.setItem('typeEN_stats', encryptData(newStats));
+                setBestStats(statsToSync);
+                localStorage.setItem('typeEN_stats', encryptData(statsToSync));
             }
         } else if (state.mode === 'WORD' && result.isWin) {
-            let newStats = { ...bestStats };
             let improved = false;
             if (result.time < (bestStats.wordTime || 999)) {
-                newStats.wordTime = result.time;
+                statsToSync.wordTime = result.time;
+                statsToSync.wordCompleted = result.completed;
                 improved = true;
             }
             if (result.maxCombo > (bestStats.wordCombo || 0)) {
-                newStats.wordCombo = result.maxCombo;
+                statsToSync.wordCombo = result.maxCombo;
+                improved = true;
+            }
+            if (result.completed > (bestStats.wordCompleted || 0)) {
+                statsToSync.wordCompleted = result.completed;
                 improved = true;
             }
             if (improved) {
-                setBestStats(newStats);
-                localStorage.setItem('typeEN_stats', encryptData(newStats));
+                setBestStats(statsToSync);
+                localStorage.setItem('typeEN_stats', encryptData(statsToSync));
             }
         } else if (state.mode === 'CAMPAIGN' && result.isWin) {
             const currentIdx = CAMPAIGN_LEVELS.findIndex(l => l.id === state.currentCampaignLevel);
@@ -346,7 +364,7 @@ function App() {
         if (currentUser && currentUser.uid) {
             // Push updated stats
             const stateNow = useGameStore.getState();
-            syncStatsToCloud(currentUser.uid, stateNow.bestStats || bestStats);
+            syncStatsToCloud(currentUser.uid, statsToSync);
             // Log effort (play count and time)
             incrementUserEffort(currentUser.uid, result.time || 0);
 

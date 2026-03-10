@@ -21,7 +21,7 @@ const Leaderboard = ({ onClose }) => {
                 // The service sorts appropriately based on mode
                 // For ENDLESS: sorted by endlessTime DESC
                 // For others: sorted by {mode}Time ASC
-                const data = await getLeaderboard(currentMode, 20);
+                const data = await getLeaderboard(currentMode, 100);
 
                 // Filter the documents to only include those that actually belong to this mode
                 // e.g., A player might have submitted endlessTime, but their normalTime document isn't here
@@ -118,6 +118,7 @@ const Leaderboard = ({ onClose }) => {
                                 const modeColor = MODES.find(m => m.id === currentMode)?.color || 'text-white';
                                 const timeValue = currentMode === 'ENDLESS' ? score.endlessTime : currentMode === 'NORMAL' ? score.normalTime : currentMode === 'WORD' ? score.wordTime : score.beginnerTime;
                                 const comboValue = currentMode === 'ENDLESS' ? score.endlessCombo : currentMode === 'NORMAL' ? score.normalCombo : currentMode === 'WORD' ? score.wordCombo : score.beginnerCombo;
+                                const completedValue = currentMode === 'ENDLESS' ? score.endlessCompleted : currentMode === 'NORMAL' ? score.normalCompleted : currentMode === 'WORD' ? score.wordCompleted : score.beginnerCompleted;
 
                                 return (
                                     <div
@@ -143,10 +144,10 @@ const Leaderboard = ({ onClose }) => {
                                                 {timeValue}s
                                             </div>
                                             <div className="col-span-1 text-orange-400">
-                                                {comboValue}
+                                                {comboValue !== undefined ? comboValue : '--'}
                                             </div>
                                             <div className="hidden md:block col-span-1 text-emerald-400/70">
-                                                {score.completed || '--'}
+                                                {completedValue !== undefined ? completedValue : '--'}
                                             </div>
                                         </div>
                                     </div>
