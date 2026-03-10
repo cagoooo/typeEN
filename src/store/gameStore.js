@@ -10,6 +10,9 @@ const saveGuestData = (state) => {
     const dataToSave = {
         unlockedAchievements: state.unlockedAchievements,
         coins: state.coins,
+        totalCompleted: state.totalCompleted,
+        totalCoinsEarned: state.totalCoinsEarned,
+        totalItemsBought: state.totalItemsBought,
         unlockedItems: state.unlockedItems,
         equippedBackground: state.equippedBackground,
         equippedEffect: state.equippedEffect,
@@ -50,19 +53,26 @@ export const useGameStore = create((set, get) => ({
     // User Profile Data
     userProfile: null,
     coins: savedGuestData?.coins || 0,
+    totalCompleted: savedGuestData?.totalCompleted || 0,
+    totalCoinsEarned: savedGuestData?.totalCoinsEarned || 0,
+    totalItemsBought: savedGuestData?.totalItemsBought || 0,
 
     // Shop & Settings state
-    unlockedItems: savedGuestData?.unlockedItems || ['default_bg', 'default_beam'],
-    equippedBackground: savedGuestData?.equippedBackground || 'default_bg',
-    equippedEffect: savedGuestData?.equippedEffect || 'default_beam',
+    unlockedItems: savedGuestData?.unlockedItems || ['theme_cyber_yellow', 'effect_lightning'], // Give default items to prevent errors
+    equippedBackground: savedGuestData?.equippedBackground || 'theme_cyber_yellow',
+    equippedEffect: savedGuestData?.equippedEffect || 'effect_lightning',
     equippedBgm: savedGuestData?.equippedBgm || 'bgm_auto',
 
     setUserProfile: (profile) => set({ userProfile: profile }),
     setCoins: (amount) => {
-        set((state) => ({
-            userProfile: state.userProfile ? { ...state.userProfile, coins: amount } : null,
-            coins: amount
-        }));
+        set((state) => {
+            const difference = amount - state.coins;
+            return {
+                userProfile: state.userProfile ? { ...state.userProfile, coins: amount } : null,
+                coins: amount,
+                totalCoinsEarned: difference > 0 ? state.totalCoinsEarned + difference : state.totalCoinsEarned
+            };
+        });
         saveGuestData(get());
     },
 
@@ -97,7 +107,10 @@ export const useGameStore = create((set, get) => ({
     incrementTime: () => set((state) => ({ gameTime: state.gameTime + 1 })),
 
     incrementCompleted: () => {
-        set((state) => ({ completedCount: state.completedCount + 1 }));
+        set((state) => ({
+            completedCount: state.completedCount + 1,
+            totalCompleted: state.totalCompleted + 1
+        }));
         return get().completedCount;
     },
 
@@ -129,7 +142,8 @@ export const useGameStore = create((set, get) => ({
         if (state.coins >= price && !state.unlockedItems.includes(itemId)) {
             set({
                 coins: state.coins - price,
-                unlockedItems: [...state.unlockedItems, itemId]
+                unlockedItems: [...state.unlockedItems, itemId],
+                totalItemsBought: state.totalItemsBought + 1
             });
             saveGuestData(get());
             return true;
@@ -140,7 +154,7 @@ export const useGameStore = create((set, get) => ({
     equipItem: (itemId, type) => {
         const state = get();
         if (state.unlockedItems.includes(itemId)) {
-            if (type === 'background') {
+            if (type === 'theme') {
                 set({ equippedBackground: itemId });
             } else if (type === 'effect') {
                 set({ equippedEffect: itemId });
@@ -163,7 +177,12 @@ export const useGameStore = create((set, get) => ({
         checkAndUnlock(state.maxCombo >= 10, 'combo_10');
         checkAndUnlock(state.maxCombo >= 50, 'combo_50');
         checkAndUnlock(state.maxCombo >= 100, 'combo_100');
+        checkAndUnlock(state.maxCombo >= 200, 'combo_200');
         checkAndUnlock(state.mode === 'ENDLESS' && state.gameTime >= 60, 'survive_60s');
+        checkAndUnlock(state.mode === 'BEGINNER' && state.maxCombo >= 100, 'beginner_pro');
+        checkAndUnlock(state.totalCompleted >= 1000, 'typewriter');
+        checkAndUnlock(state.totalCoinsEarned >= 2000, 'millionaire');
+        checkAndUnlock(state.totalItemsBought >= 5, 'shopaholic');
 
         return unlocked;
     }

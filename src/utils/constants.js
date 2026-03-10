@@ -27,89 +27,31 @@ export const VOCABULARY = [
 ];
 
 export const ACHIEVEMENTS = [
-    {
-        id: 'first_blood',
-        title: '初出茅廬',
-        description: '成功擊破第一個字母',
-        icon: '🎯'
-    },
-    {
-        id: 'combo_10',
-        title: '連擊好手',
-        description: '達成 10 連擊',
-        icon: '🔥'
-    },
-    {
-        id: 'combo_50',
-        title: '無影手',
-        description: '達成 50 連擊',
-        icon: '⚡'
-    },
-    {
-        id: 'combo_100',
-        title: '鍵盤之神',
-        description: '達成 100 連擊',
-        icon: '👑'
-    },
-    {
-        id: 'survive_60s',
-        title: '生存專家',
-        description: '在無盡模式存活 60 秒',
-        icon: '🛡️'
-    },
-    {
-        id: 'boss_killer',
-        title: 'BOSS 剋星',
-        description: '擊敗一次首領',
-        icon: '⚔️'
-    },
-    {
-        id: 'word_master',
-        title: '單字大師',
-        description: '通關單字挑戰',
-        icon: '📖'
-    },
-    {
-        id: 'perfect_clear',
-        title: '完美主義',
-        description: '無失誤(Combo不斷)通關一般模式',
-        icon: '✨'
-    }
+    { id: 'first_blood', title: '初出茅廬', description: '成功擊破第一個字母', icon: '🎯' },
+    { id: 'combo_10', title: '連擊好手', description: '達成 10 連擊', icon: '🔥' },
+    { id: 'combo_50', title: '無影手', description: '達成 50 連擊', icon: '⚡' },
+    { id: 'combo_100', title: '鍵盤之神', description: '達成 100 連擊', icon: '👑' },
+    { id: 'combo_200', title: '神乎其技', description: '達成 200 連擊', icon: '🌟' },
+    { id: 'beginner_pro', title: '初學大師', description: '在初學者模式達到 100 連擊', icon: '🔰' },
+    { id: 'survive_60s', title: '生存專家', description: '在無盡模式存活 60 秒', icon: '🛡️' },
+    { id: 'boss_killer', title: 'BOSS 剋星', description: '擊敗一次首領', icon: '⚔️' },
+    { id: 'word_master', title: '單字大師', description: '通關單字挑戰', icon: '📖' },
+    { id: 'perfect_clear', title: '完美主義', description: '無失誤通關一般模式', icon: '✨' },
+    { id: 'typewriter', title: '打字機', description: '歷史累積完成 1000 個字', icon: '⌨️' },
+    { id: 'millionaire', title: '財富自由', description: '歷史累積獲得 2000 枚代幣', icon: '💰' },
+    { id: 'shopaholic', title: '購物狂', description: '在商城購買 5 個商品', icon: '🛍️' }
 ];
 
 export const SHOP_ITEMS = [
-    {
-        id: 'theme_neon_pink',
-        name: '櫻花霓虹網格',
-        type: 'theme',
-        price: 100,
-        icon: '🌸',
-        value: 'rgba(244, 114, 182, 0.2)'
-    },
-    {
-        id: 'theme_matrix_green',
-        name: '駭客任務綠',
-        type: 'theme',
-        price: 150,
-        icon: '💻',
-        value: 'rgba(74, 222, 128, 0.2)'
-    },
-    {
-        id: 'theme_cyber_yellow',
-        name: '賽博黃金',
-        type: 'theme',
-        price: 200,
-        icon: '⚡',
-        value: 'rgba(250, 204, 21, 0.2)'
-    },
-    {
-        id: 'theme_blood_red',
-        name: '腥紅之月',
-        type: 'theme',
-        price: 300,
-        icon: '🩸',
-        value: 'rgba(239, 68, 68, 0.2)'
-    }
+    { id: 'theme_neon_pink', name: '櫻花霓虹網格', type: 'theme', price: 100, icon: '🌸', value: 'rgba(244, 114, 182, 0.2)' },
+    { id: 'theme_matrix_green', name: '駭客任務綠', type: 'theme', price: 150, icon: '💻', value: 'rgba(74, 222, 128, 0.2)' },
+    { id: 'theme_cyber_yellow', name: '賽博黃金', type: 'theme', price: 200, icon: '⚡', value: 'rgba(250, 204, 21, 0.2)' },
+    { id: 'theme_blood_red', name: '腥紅之月', type: 'theme', price: 300, icon: '🩸', value: 'rgba(239, 68, 68, 0.2)' },
+    { id: 'theme_cosmic_purple', name: '星空幽紫', type: 'theme', price: 150, icon: '🌌', value: 'rgba(168, 85, 247, 0.2)' },
+    { id: 'theme_deep_sea', name: '深海湛藍', type: 'theme', price: 150, icon: '🌊', value: 'rgba(14, 165, 233, 0.2)' },
+    { id: 'effect_lightning', name: '閃電軌跡', type: 'effect', price: 200, icon: '⚡', description: '改變打字成功時的粒子為耀眼黃白交錯' },
+    { id: 'effect_cherry', name: '櫻花飄落', type: 'effect', price: 300, icon: '🌸', description: '溫柔的粉紅色與白色粒子效果' },
+    { id: 'effect_rainbow', name: '彩虹光譜', type: 'effect', price: 500, icon: '🌈', description: '隨機七彩的炫麗粒子' }
 ];
 
 export const BGM_CHOICES = [
