@@ -126,18 +126,25 @@ function App() {
     const setEquippedBgm = useGameStore(state => state.setEquippedBgm);
 
     // Initial auth listener
-    const authFirstFiredRef = useRef(false); // Tracks if first auth event has been received
     useEffect(() => {
         const unsubscribe = subscribeToAuth(async (user) => {
             if (user) {
-                authFirstFiredRef.current = true;
-                // User is signed in
+                // User is signed in - fetch latest profile from Firestore
                 const profile = await getUserProfile(user.uid);
-                setUserProfile(profile);
+                // If Firestore profile exists, use it; otherwise keep cached until ensureUserDocument finishes
+                if (profile) {
+                    setUserProfile(profile);
+                }
                 useGameStore.getState().setAuthInitialized(true);
 
-                // Ensure document exists to avoid race condition on first login
+                // Ensure document exists (first-time login)
                 await ensureUserDocument(user);
+
+                // Re-fetch after ensuring document exists (in case it was just created)
+                if (!profile) {
+                    const freshProfile = await getUserProfile(user.uid);
+                    setUserProfile(freshProfile);
+                }
 
                 // Check if there's a pending class code
                 const pendingClassCode = sessionStorage.getItem('pendingClassCode');
@@ -145,7 +152,6 @@ function App() {
                     const result = await joinClassUser(user.uid, pendingClassCode);
                     if (result.success) {
                         showToast(result.message);
-                        // Refresh profile after joining class
                         const updatedProfile = await getUserProfile(user.uid);
                         setUserProfile(updatedProfile);
                     } else {
@@ -166,7 +172,6 @@ function App() {
                         }
                     }
                 } else if (profile?.stats) {
-                    // Load stats from cloud if no local
                     setBestStats(profile.stats);
                     localStorage.setItem('typeEN_stats', encryptData(profile.stats));
                 }
@@ -187,17 +192,8 @@ function App() {
                 }
 
             } else {
-                // Firebase Auth fired null.
-                // If this is the FIRST event (browser just loaded), it might be a temporary
-                // initializing state. Only clear profile after Firebase has confirmed the user
-                // is truly not signed in.
-                if (!authFirstFiredRef.current) {
-                    // First time null: Firebase is still initializing. Keep cached profile until confirmed.
-                    authFirstFiredRef.current = true;
-                    useGameStore.getState().setAuthInitialized(false); // Still loading
-                    return;
-                }
-                // User genuinely signed out
+                // User is not signed in (or signed out)
+                // Firebase Auth with browserLocalPersistence fires null only when truly signed out
                 setUserProfile(null);
                 useGameStore.getState().setUnlockedAchievements([]);
                 useGameStore.getState().setAuthInitialized(true);
