@@ -503,11 +503,8 @@ function App() {
                                     登入同步紀錄
                                 </button>
                             )}
-                            {!useGameStore.getState().authInitialized && !userProfile && (
-                                <div className="absolute inset-0 bg-gray-950/20 backdrop-blur-[2px] rounded-full flex items-center justify-center animate-pulse">
-                                    <div className="w-4 h-4 rounded-full bg-white/50"></div>
-                                </div>
-                            )}
+
+
                         </div>
 
                         {/* BGM Selector */}
