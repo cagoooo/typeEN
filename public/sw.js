@@ -54,7 +54,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // 略過 Vite 開發工具、外部 CDN、Firebase、非 GET 請求
+    // 只處理 http/https 請求，略過 chrome-extension:// 等不支援 Cache API 的協議
+    if (!url.protocol.startsWith('http')) return;
+
+    // 略過 Vite 開發工具、Firebase API、非 GET 請求
     if (
         url.pathname.includes('/@vite/') ||
         url.pathname.includes('/@react-refresh') ||
