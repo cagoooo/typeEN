@@ -440,47 +440,62 @@ const GameArea = ({ onGameEnd }) => {
             }
         }, 1000);
 
-        let spawnTimeout;
-        const spawnSequence = () => {
+        // Use a generation token (incrementing counter) to prevent duplicate spawn chains.
+        // When triggerSpawn is called, it cancels the old chain by bumping the token.
+        let spawnGeneration = 0;
+
+        const spawnSequence = (generation) => {
+            // If a newer generation has started, this chain is obsolete - stop.
+            if (generation !== spawnGeneration) return;
             if (engineState.current.isOver) return;
-            const gm = useGameStore.getState().mode;
-            if ((gm === 'ENDLESS' || gm === 'CAMPAIGN') && lettersToDropRef.current.length === 0) {
-                lettersToDropRef.current = [...ALPHABET].sort(() => Math.random() - 0.5);
+
+            const state = useGameStore.getState();
+            const gm = state.mode;
+            const currentCompleted = state.completedCount;
+            const target = (gm === 'WORD') ? 10 : ALPHABET.length; // ENDLESS/CAMPAIGN refill infinitely
+
+            // Refill if needed
+            if (lettersToDropRef.current.length === 0) {
+                if (gm === 'ENDLESS' || gm === 'CAMPAIGN') {
+                    lettersToDropRef.current = [...ALPHABET].sort(() => Math.random() - 0.5);
+                } else if (currentCompleted < target) {
+                    // Refill for NORMAL/BEGINNER/WORD if letters ran out before target
+                    lettersToDropRef.current = [...ALPHABET].sort(() => Math.random() - 0.5);
+                }
             }
 
             if (lettersToDropRef.current.length > 0) {
                 spawnLetter();
-                const stateCompleted = useGameStore.getState().completedCount;
                 const currentMode = useGameStore.getState().mode;
 
                 let delay = 0;
                 if (currentMode === 'BEGINNER') {
-                    // Slower generation pace
                     delay = Math.random() * (2000 - 1200) + 1200;
                 } else if (currentMode === 'CAMPAIGN' && levelConfigRef.current) {
                     delay = levelConfigRef.current.config.spawnInterval * (Math.random() * 0.4 + 0.8);
                 } else {
                     const progressFactor = currentMode === 'ENDLESS'
-                        ? Math.min(stateCompleted * 0.05, 0.8)
-                        : Math.min(stateCompleted * 0.05, 0.5);
+                        ? Math.min(currentCompleted * 0.05, 0.8)
+                        : Math.min(currentCompleted * 0.05, 0.5);
                     const currentMinDelay = Math.max(SPAWN_MIN_DELAY * (1.5 - progressFactor), 300);
                     const currentMaxDelay = Math.max(SPAWN_MAX_DELAY * (1.5 - progressFactor), 600);
                     delay = Math.random() * (currentMaxDelay - currentMinDelay) + currentMinDelay;
                 }
 
-                engineState.current.spawnTimeout = setTimeout(spawnSequence, delay);
-                engineState.current.isSpawning = true;
-            } else {
-                engineState.current.isSpawning = false;
+                setTimeout(() => spawnSequence(generation), delay);
             }
-        };
-        // Ensure spawnSequence can be re-triggered from outside
-        engineState.current.triggerSpawn = () => {
-            clearTimeout(engineState.current.spawnTimeout);
-            spawnSequence();
+            // If lettersToDropRef is empty and target is reached, we intentionally stop. Game will end via completedCount check.
         };
 
-        spawnSequence();
+        // triggerSpawn: cancel old chain, start fresh one immediately.
+        engineState.current.triggerSpawn = () => {
+            if (engineState.current.isOver) return;
+            spawnGeneration++; // Cancel old chain
+            spawnSequence(spawnGeneration);
+        };
+
+        // Start initial spawn chain
+        spawnSequence(spawnGeneration);
 
         let animationFrame;
         let lastTime = performance.now();
@@ -552,10 +567,8 @@ const GameArea = ({ onGameEnd }) => {
                         // Push back to the start of the array to be spawned next
                         lettersToDropRef.current.unshift(l.char);
 
-                        // Ensure the spawn sequence is kept alive if it's currently empty
-                        if (!engineState.current.isOver && !engineState.current.isSpawning) {
-                            engineState.current.triggerSpawn();
-                        }
+                        // Always trigger a new spawn chain (generation token prevents duplicates)
+                        engineState.current.triggerSpawn();
                     }
                 } else {
                     newLetters.push(l);

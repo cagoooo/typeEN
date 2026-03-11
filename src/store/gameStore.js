@@ -5,6 +5,10 @@ import { encryptData, decryptData } from '../utils/crypto';
 const guestDataString = localStorage.getItem('typeEN_guestData');
 const savedGuestData = guestDataString ? decryptData(guestDataString) : {};
 
+// Try to load cached user profile to prevent flash of "not logged in"
+const cachedProfileString = localStorage.getItem('typeEN_userProfile');
+const cachedProfile = cachedProfileString ? decryptData(cachedProfileString) : null;
+
 const saveGuestData = (state) => {
     // Only save core guest progressions, not game session states
     const dataToSave = {
@@ -30,6 +34,7 @@ export const useGameStore = create((set, get) => ({
     maxCombo: 0,
     gameTime: 0,
     completedCount: 0,
+    authInitialized: false, // Track if Firebase Auth has initialized
 
     // Campaign State
     campaignUnlocked: savedGuestData?.campaignUnlocked || ['1-1'],
@@ -51,7 +56,7 @@ export const useGameStore = create((set, get) => ({
     },
 
     // User Profile Data
-    userProfile: null,
+    userProfile: cachedProfile,
     coins: savedGuestData?.coins || 0,
     totalCompleted: savedGuestData?.totalCompleted || 0,
     totalCoinsEarned: savedGuestData?.totalCoinsEarned || 0,
@@ -63,7 +68,15 @@ export const useGameStore = create((set, get) => ({
     equippedEffect: savedGuestData?.equippedEffect || 'effect_lightning',
     equippedBgm: savedGuestData?.equippedBgm || 'bgm_auto',
 
-    setUserProfile: (profile) => set({ userProfile: profile }),
+    setAuthInitialized: (initialized) => set({ authInitialized: initialized }),
+    setUserProfile: (profile) => {
+        set({ userProfile: profile });
+        if (profile) {
+            localStorage.setItem('typeEN_userProfile', encryptData(profile));
+        } else {
+            localStorage.removeItem('typeEN_userProfile');
+        }
+    },
     setCoins: (amount) => {
         set((state) => {
             const difference = amount - state.coins;

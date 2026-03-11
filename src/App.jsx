@@ -126,15 +126,18 @@ function App() {
     const setEquippedBgm = useGameStore(state => state.setEquippedBgm);
 
     // Initial auth listener
+    const authFirstFiredRef = useRef(false); // Tracks if first auth event has been received
     useEffect(() => {
         const unsubscribe = subscribeToAuth(async (user) => {
             if (user) {
-                // Ensure document exists to avoid race condition on first login
-                await ensureUserDocument(user);
-
+                authFirstFiredRef.current = true;
                 // User is signed in
                 const profile = await getUserProfile(user.uid);
                 setUserProfile(profile);
+                useGameStore.getState().setAuthInitialized(true);
+
+                // Ensure document exists to avoid race condition on first login
+                await ensureUserDocument(user);
 
                 // Check if there's a pending class code
                 const pendingClassCode = sessionStorage.getItem('pendingClassCode');
@@ -173,7 +176,7 @@ function App() {
                     useGameStore.getState().setUnlockedAchievements(profile.achievements);
                 }
 
-                // Load shop database
+                // Load shop data
                 if (profile?.unlockedItems !== undefined || profile?.coins !== undefined) {
                     useGameStore.setState(state => ({
                         unlockedItems: profile.unlockedItems || state.unlockedItems,
@@ -184,9 +187,20 @@ function App() {
                 }
 
             } else {
-                // User signed out
+                // Firebase Auth fired null.
+                // If this is the FIRST event (browser just loaded), it might be a temporary
+                // initializing state. Only clear profile after Firebase has confirmed the user
+                // is truly not signed in.
+                if (!authFirstFiredRef.current) {
+                    // First time null: Firebase is still initializing. Keep cached profile until confirmed.
+                    authFirstFiredRef.current = true;
+                    useGameStore.getState().setAuthInitialized(false); // Still loading
+                    return;
+                }
+                // User genuinely signed out
                 setUserProfile(null);
                 useGameStore.getState().setUnlockedAchievements([]);
+                useGameStore.getState().setAuthInitialized(true);
 
                 // If NOT signed in but has pending code, prompt user
                 const pendingClassCode = sessionStorage.getItem('pendingClassCode');
@@ -410,8 +424,8 @@ function App() {
                                 <div className="flex items-center gap-4 bg-gray-950/80 p-3 rounded-full border border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.2)] backdrop-blur-md relative overflow-hidden group/profile">
                                     {/* Long Press Progress Bar (CSS Animated) */}
                                     <div
-                                        className={`absolute bottom - 0 left - 0 h - 1 bg - gradient - to - r from - emerald - 400 to - cyan - 400 pointer - events - none transition - all ease - linear ${isTeacherPressing ? 'w-full duration-[3000ms]' : 'w-0 duration-[100ms]'
-                                            } `}
+                                        className={`absolute bottom-0 left-0 h-1 bg-gradient-to-r from-emerald-400 to-cyan-400 pointer-events-none transition-all ease-linear ${isTeacherPressing ? 'w-full duration-[3000ms]' : 'w-0 duration-[100ms]'
+                                            }`}
                                     />
                                     <div
                                         className="flex items-center gap-3 pl-2 cursor-pointer select-none touch-none hover:bg-white/5 rounded-full transition-colors pr-2 py-1 -ml-2 -my-1"
@@ -492,6 +506,11 @@ function App() {
                                     </svg>
                                     登入同步紀錄
                                 </button>
+                            )}
+                            {!useGameStore.getState().authInitialized && !userProfile && (
+                                <div className="absolute inset-0 bg-gray-950/20 backdrop-blur-[2px] rounded-full flex items-center justify-center animate-pulse">
+                                    <div className="w-4 h-4 rounded-full bg-white/50"></div>
+                                </div>
                             )}
                         </div>
 
@@ -730,7 +749,7 @@ function App() {
                     profile={userProfile}
                     onClose={() => setShowSharePreview(false)}
                     onShare={() => {
-                        const shareUrl = `${window.location.origin}${window.location.pathname}?uid = ${userProfile.uid} `;
+                        const shareUrl = `${window.location.origin}${window.location.pathname}?uid=${userProfile.uid}`;
                         navigator.clipboard.writeText(shareUrl).then(() => {
                             setShowSharePreview(false);
                             showToast('個人成績網址已複製到剪貼簿！📋');

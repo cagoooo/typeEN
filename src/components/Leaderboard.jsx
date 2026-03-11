@@ -3,7 +3,7 @@ import { getLeaderboard } from '../utils/leaderboardService';
 import { Trophy, Clock, Target, Flame, X, Loader } from 'lucide-react';
 
 const Leaderboard = ({ onClose }) => {
-    const [currentMode, setCurrentMode] = useState('NORMAL');
+    const [currentMode, setCurrentMode] = useState('BEGINNER');
     const [loading, setLoading] = useState(true);
     const [scores, setScores] = useState([]);
 
