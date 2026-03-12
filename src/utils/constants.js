@@ -57,6 +57,13 @@ export const SHOP_ITEMS = [
 export const BGM_CHOICES = [
     { id: 'bgm_auto', name: '隨機撥放 (Auto)', url: 'auto' },
     { id: 'bgm_reset', name: '賽博重置 (RESET)', url: './audio/bgm_1.mp3' },
-    { id: 'bgm_glory', name: '史詩榮耀 (Glory)', url: './audio/bgm_2.mp3' },
+    { id: 'bgm_glory', name: '史詩榮榮耀 (Glory)', url: './audio/bgm_2.mp3' },
     { id: 'bgm_noise', name: '賽博噪音 (Noise)', url: './audio/bgm_3.mp3' },
+    { id: 'bgm_idra', name: '電子電玩 (IDRA)', url: './audio/bgm_4.mp3' },
+    { id: 'bgm_push', name: '極限動力 (PUSH)', url: './audio/bgm_5.mp3' },
+    { id: 'bgm_hammer', name: '重錘出擊 (Hammer)', url: './audio/bgm_6.mp3' },
+    { id: 'bgm_gloves', name: '工業節奏 (Industrial)', url: './audio/bgm_7.mp3' },
+    { id: 'bgm_turbo', name: '極速拉力 (Turbo)', url: './audio/bgm_8.mp3' },
+    { id: 'bgm_shine', name: '科幻拋光 (SHINE)', url: './audio/bgm_10.mp3' },
+    { id: 'bgm_enthusiast', name: '熱血狂想 (Enthusiast)', url: './audio/bgm_11.mp3' },
 ];
