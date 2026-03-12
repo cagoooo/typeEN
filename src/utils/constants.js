@@ -56,9 +56,7 @@ export const SHOP_ITEMS = [
 
 export const BGM_CHOICES = [
     { id: 'bgm_auto', name: '隨機撥放 (Auto)', url: 'auto' },
-    { id: 'bgm_cyber', name: '賽博龐克 (Cyberpunk)', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
-    { id: 'bgm_synth', name: '合成器浪潮 (Synthwave)', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
-    { id: 'bgm_action', name: '霓虹突擊 (Action)', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
-    { id: 'bgm_chill', name: '靈魂潛行 (Chill)', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' },
-    { id: 'bgm_epic', name: '最終戰役 (Epic)', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3' },
+    { id: 'bgm_reset', name: '賽博重置 (RESET)', url: './audio/bgm_1.mp3' },
+    { id: 'bgm_glory', name: '史詩榮耀 (Glory)', url: './audio/bgm_2.mp3' },
+    { id: 'bgm_noise', name: '賽博噪音 (Noise)', url: './audio/bgm_3.mp3' },
 ];

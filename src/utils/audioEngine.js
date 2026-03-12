@@ -23,17 +23,23 @@ class AudioEngine {
                     volume: 0.5,
                     preload: true,
                     html5: true,
+                    onloaderror: (id, err) => {
+                        console.warn(`[AudioEngine] BGM load error (${choice.id}):`, err);
+                    }
                 });
                 this.autoKeys.push(choice.id);
             }
         });
 
         this.bossBgm = new Howl({
-            src: ['https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3'], // Intense Boss music
+            src: ['./audio/bgm_9.mp3'], // Intense Boss music local path
             loop: true,
             volume: 0.6,
             preload: true,
             html5: true,
+            onloaderror: (id, err) => {
+                console.warn('[AudioEngine] Boss BGM load error:', err);
+            }
         });
 
         this.initialized = true;

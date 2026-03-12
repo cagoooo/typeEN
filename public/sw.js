@@ -94,6 +94,11 @@ self.addEventListener('fetch', (event) => {
     }
 
     // 靜態資產（圖示、音效）：Cache First
+    // 排除外部音效資源（如 soundhelix.com），因為它們通常使用 Range 請求且不適合快取
+    if (url.host.includes('soundhelix.com')) {
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request).then((cached) => {
             if (cached) return cached;
@@ -103,6 +108,10 @@ self.addEventListener('fetch', (event) => {
                     caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
                 }
                 return response;
+            }).catch((err) => {
+                // 網路抓取失敗時的靜寂處理，避免 SW 崩潰
+                console.warn('[SW] Fetch failed for:', event.request.url, err);
+                return new Response('Network error occurred', { status: 408, statusText: 'Network Error' });
             });
         })
     );
