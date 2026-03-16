@@ -91,7 +91,7 @@ const GameArea = ({ onGameEnd }) => {
 
         if (currentMode === 'BEGINNER') {
             // Extremely slow and constant speed for beginners
-            speed = Math.random() * (1.2 - 0.6) + 0.6;
+            speed = Math.random() * (0.5 - 0.3) + 0.3;
         } else if (currentMode === 'CAMPAIGN' && levelConfigRef.current) {
             speed = levelConfigRef.current.config.speed + (Math.random() * 0.6);
             if (levelConfigRef.current.objective.type === 'PERFECT_WORDS') {
@@ -296,7 +296,7 @@ const GameArea = ({ onGameEnd }) => {
                 triggerShake();
 
                 // Anti-spam penalty
-                const newHealth = useGameStore.getState().deductHealth(1);
+                let newHealth = useGameStore.getState().deductHealth(1);
                 const canvasWidth = canvasRef.current ? canvasRef.current.width : window.innerWidth;
                 const canvasHeight = canvasRef.current ? canvasRef.current.height : window.innerHeight;
                 engineState.current.floatingTexts.push({
@@ -464,13 +464,22 @@ const GameArea = ({ onGameEnd }) => {
                 }
             }
 
+            const currentMode = useGameStore.getState().mode;
+            if (currentMode === 'BEGINNER') {
+                // Limit concurrent letters for beginners to prevent visual overload
+                // Check BEFORE spawning
+                if (engineState.current.letters.length >= 2) {
+                    setTimeout(() => spawnSequence(generation), 500);
+                    return;
+                }
+            }
+
             if (lettersToDropRef.current.length > 0) {
                 spawnLetter();
-                const currentMode = useGameStore.getState().mode;
 
                 let delay = 0;
                 if (currentMode === 'BEGINNER') {
-                    delay = Math.random() * (2000 - 1200) + 1200;
+                    delay = Math.random() * (4000 - 2500) + 2500;
                 } else if (currentMode === 'CAMPAIGN' && levelConfigRef.current) {
                     delay = levelConfigRef.current.config.spawnInterval * (Math.random() * 0.4 + 0.8);
                 } else {
