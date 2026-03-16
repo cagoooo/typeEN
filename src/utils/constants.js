@@ -18,6 +18,12 @@ export const fingerMap = {
     'P': 'right-pinky',
 };
 
+export const rowMap = {
+    'Q': 'top', 'W': 'top', 'E': 'top', 'R': 'top', 'T': 'top', 'Y': 'top', 'U': 'top', 'I': 'top', 'O': 'top', 'P': 'top',
+    'A': 'home', 'S': 'home', 'D': 'home', 'F': 'home', 'G': 'home', 'H': 'home', 'J': 'home', 'K': 'home', 'L': 'home',
+    'Z': 'bottom', 'X': 'bottom', 'C': 'bottom', 'V': 'bottom', 'B': 'bottom', 'N': 'bottom', 'M': 'bottom',
+};
+
 export const VOCABULARY = [
     'APPLE', 'BOOK', 'CAT', 'DOG', 'EGG', 'FISH', 'GOOD', 'HAPPY', 'ICE', 'JUMP',
     'KITE', 'LION', 'MOON', 'NICE', 'OPEN', 'PINK', 'QUIET', 'RED', 'SUN', 'TREE',

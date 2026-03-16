@@ -1,5 +1,5 @@
 import React from 'react';
-import { fingerMap } from '../utils/constants';
+import { fingerMap, rowMap } from '../utils/constants';
 
 const HandsHint = ({ activeLetters = [] }) => {
     // 找出目前位置最低的字母來提示
@@ -10,25 +10,43 @@ const HandsHint = ({ activeLetters = [] }) => {
         }
     });
 
-    const targetFingerId = lowestLetter ? fingerMap[lowestLetter.char.toUpperCase()] : null;
+    const targetChar = lowestLetter ? lowestLetter.char.toUpperCase() : null;
+    const targetFingerId = targetChar ? fingerMap[targetChar] : null;
+    const targetRow = targetChar ? rowMap[targetChar] : null;
 
     const isHighlighted = (fingerId) => fingerId === targetFingerId ? 'highlight' : '';
 
+    // 指示符號的位置與樣式
+    const getDirectionIcon = () => {
+        if (!targetRow) return null;
+        if (targetRow === 'top') return '↑';
+        if (targetRow === 'bottom') return '↓';
+        return '●'; // Home row
+    };
+
     return (
         <div className="fixed bottom-3 md:bottom-5 left-1/2 -translate-x-1/2 pointer-events-none w-[90%] max-w-[420px] aspect-[420/180] z-10 transition-transform duration-300">
+            {/* 方向文字提示組件 */}
+            {targetRow && (
+                <div className="absolute top-[-30px] left-1/2 -translate-x-1/2 bg-indigo-900/80 border border-indigo-400 px-3 py-1 rounded-full text-white text-xs font-bold font-mono tracking-widest shadow-[0_0_15px_rgba(99,102,241,0.5)] flex items-center gap-2 animate-bounce">
+                    <span className="text-lime-400">{getDirectionIcon()}</span>
+                    <span>{targetRow === 'top' ? '上移' : targetRow === 'bottom' ? '下移' : '中排'}</span>
+                </div>
+            )}
+
             <svg viewBox="0 0 420 180" className="w-full h-full drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]">
                 <defs>
                     <linearGradient id="hand-base-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style={{ stopColor: 'rgba(79, 70, 229, 0.6)' }} /> {/* Indigo-600 */}
-                        <stop offset="100%" style={{ stopColor: 'rgba(30, 27, 75, 0.4)' }} /> {/* Indigo-950 */}
+                        <stop offset="0%" style={{ stopColor: 'rgba(79, 70, 229, 0.6)' }} />
+                        <stop offset="100%" style={{ stopColor: 'rgba(30, 27, 75, 0.4)' }} />
                     </linearGradient>
                     <linearGradient id="finger-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style={{ stopColor: 'rgba(99, 102, 241, 0.7)' }} /> {/* Indigo-500 */}
-                        <stop offset="100%" style={{ stopColor: 'rgba(49, 46, 129, 0.5)' }} /> {/* Indigo-900 */}
+                        <stop offset="0%" style={{ stopColor: 'rgba(99, 102, 241, 0.7)' }} />
+                        <stop offset="100%" style={{ stopColor: 'rgba(49, 46, 129, 0.5)' }} />
                     </linearGradient>
                     <linearGradient id="finger-highlight-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style={{ stopColor: '#a3e635' }} /> {/* lime-400 : Cyberpunk Green */}
-                        <stop offset="100%" style={{ stopColor: '#16a34a' }} /> {/* green-600 */}
+                        <stop offset="0%" style={{ stopColor: '#a3e635' }} />
+                        <stop offset="100%" style={{ stopColor: '#16a34a' }} />
                     </linearGradient>
 
                     <style>{`
@@ -44,7 +62,7 @@ const HandsHint = ({ activeLetters = [] }) => {
               stroke-width: 2;
               transform-box: fill-box;
               transform-origin: center bottom;
-              transform: scale(1.08) translateY(-8px);
+              transform: ${targetRow === 'top' ? 'scale(1.1) translateY(-15px)' : targetRow === 'bottom' ? 'scale(1.05) translateY(5px)' : 'scale(1.08) translateY(-8px)'};
               filter: drop-shadow(0px 0px 20px #84cc16);
             }
             .hand-base {
