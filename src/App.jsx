@@ -4,6 +4,7 @@ import Leaderboard from './components/Leaderboard';
 import { useGameStore } from './store/gameStore';
 import { Trophy, LogIn, LogOut, User as UserIcon, Award, ShoppingCart, Share2, Users, Fingerprint, Music } from 'lucide-react';
 import { subscribeToAuth, loginWithGoogle, logout, getUserProfile, syncStatsToCloud, syncAchievementsToCloud, upgradeToTeacher, joinClassUser, ensureUserDocument, incrementUserEffort } from './utils/userService';
+import { getLeaderboard, getUserRank } from './utils/leaderboardService';
 import AchievementToast from './components/AchievementToast';
 import AchievementDashboard from './components/AchievementDashboard';
 import Shop from './components/Shop';
@@ -243,23 +244,10 @@ function App() {
     };
 
 
-    const handleGameEnd = React.useCallback((isWin, extraData = {}) => {
+    const handleGameEnd = React.useCallback(async (isWin, extraData = {}) => {
         const state = useGameStore.getState();
-        const result = {
-            isWin,
-            time: state.gameTime,
-            completed: state.completedCount,
-            maxCombo: state.maxCombo,
-            missedLetters: extraData.missedLetters || {}
-        };
 
-        setGameResult(result);
-        setGameState('END');
-
-        // Trigger achievements check
-        const unlocked = state.checkAchievements();
-
-        // Calculate and award coins
+        // Calculate earned coins first to include in result
         let earnedCoins = 0;
         if (isWin || state.mode === 'ENDLESS') {
             earnedCoins = Math.floor(state.maxCombo / 2) + Math.floor(state.completedCount / 5);
@@ -270,6 +258,25 @@ function App() {
                 state.setCoins(currentCoins + earnedCoins);
             }
         }
+
+        const result = {
+            isWin,
+            time: state.gameTime,
+            completed: state.completedCount,
+            maxCombo: state.maxCombo,
+            earnedCoins,
+            missedLetters: extraData.missedLetters || {}
+        };
+
+        setGameResult(result);
+        setGameState('END');
+
+        // Trigger achievements check
+        const unlocked = state.checkAchievements();
+
+        // Fetch rank asynchronously
+        const rank = await getUserRank(state.mode, state.gameTime);
+        setGameResult(prev => ({ ...prev, currentRank: rank }));
 
         // Save achievements to user profile if user is logged in
         if (unlocked.length > 0) {
@@ -629,12 +636,39 @@ function App() {
                             </h2>
                         )}
 
-                        <div className="text-xl text-gray-300 mb-8 space-y-3 font-['Orbitron']">
-                            <p>完成進度: <span className="text-white font-bold">{gameResult.completed} {useGameStore.getState().mode === 'ENDLESS' ? '' : '/ 26'}</span></p>
-                            {gameResult.isWin && (
-                                <p>通關時間: <span className="text-white font-bold">{gameResult.time} 秒</span></p>
-                            )}
-                            <p>最高連擊: <span className="text-orange-400 font-bold">{gameResult.maxCombo}</span></p>
+                        <div className="bg-gray-800/50 backdrop-blur-sm border border-fuchsia-500/20 rounded-3xl p-8 mb-8">
+                            <div className="text-xl text-gray-300 mb-8 space-y-4 font-['Orbitron']">
+                                <div className="flex justify-between items-center border-b border-gray-700/50 pb-2">
+                                    <span>完成進度:</span>
+                                    <span className="text-white font-bold">{gameResult.completed} {useGameStore.getState().mode === 'ENDLESS' ? '' : '/ 26'}</span>
+                                </div>
+
+                                {gameResult.isWin && (
+                                    <div className="flex justify-between items-center border-b border-gray-700/50 pb-2">
+                                        <span>通關時間:</span>
+                                        <span className="text-white font-bold">{gameResult.time} 秒</span>
+                                    </div>
+                                )}
+
+                                <div className="flex justify-between items-center border-b border-gray-700/50 pb-2">
+                                    <span>最高連擊:</span>
+                                    <span className="text-orange-400 font-bold">{gameResult.maxCombo}</span>
+                                </div>
+
+                                {gameResult.earnedCoins > 0 && (
+                                    <div className="flex justify-between items-center border-b border-fuchsia-500/30 pb-2 animate-bounce">
+                                        <span className="text-yellow-400">金幣獎勵:</span>
+                                        <span className="text-yellow-400 font-bold">🪙 +{gameResult.earnedCoins}</span>
+                                    </div>
+                                )}
+
+                                {gameResult.currentRank && (
+                                    <div className="flex justify-between items-center text-sm pt-2">
+                                        <span className="text-emerald-400">目前排行:</span>
+                                        <span className="text-emerald-400 font-bold">第 {gameResult.currentRank} 名</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {useGameStore.getState().mode === 'BEGINNER' && gameResult.isWin && (

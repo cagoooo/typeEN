@@ -104,6 +104,16 @@ const ResultShareCard = ({ result, profile, mode, onClose }) => {
                                     {result.maxCombo}
                                 </span>
                             </div>
+                            {result.earnedCoins > 0 && (
+                                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4 flex flex-col items-center col-span-2 shadow-[0_0_15px_rgba(234,179,8,0.1)]">
+                                    <span className="text-yellow-400 text-xs font-bold mb-1 flex items-center gap-2">
+                                        <Trophy className="w-3 h-3" /> 本次獲得金幣
+                                    </span>
+                                    <span className="text-yellow-400 font-['Orbitron'] text-2xl font-bold">
+                                        🪙 +{result.earnedCoins}
+                                    </span>
+                                </div>
+                            )}
                             {result.time > 0 && (
                                 <div className="bg-gray-800/60 border border-gray-700 rounded-2xl p-4 flex flex-col items-center col-span-2">
                                     <span className="text-gray-400 text-xs font-bold mb-1">

@@ -63,3 +63,35 @@ export const getLeaderboard = async (gameMode, maxResults = 100) => {
         return [];
     }
 };
+/**
+ * 獲取特定使用者的當前排名
+ */
+export const getUserRank = async (gameMode, userValue) => {
+    try {
+        if (!userValue || userValue === 0 || userValue === 999) return null;
+
+        let q;
+        if (gameMode === 'ENDLESS') {
+            // 無盡模式：時間越長越前面 (desc)
+            q = query(
+                collection(db, COLLECTION_NAME),
+                where('stats.endlessTime', '>', userValue)
+            );
+        } else {
+            // 一般/單字/初學者模式：時間越短越前面 (asc)
+            const timeField = gameMode === 'NORMAL' ? 'stats.normalTime' :
+                gameMode === 'WORD' ? 'stats.wordTime' : 'stats.beginnerTime';
+            q = query(
+                collection(db, COLLECTION_NAME),
+                where(timeField, '<', userValue)
+            );
+        }
+
+        const snapshot = await getDocs(q);
+        // 排名 = 比自己強的人數 + 1
+        return snapshot.size + 1;
+    } catch (e) {
+        console.error("Error getting user rank: ", e);
+        return null;
+    }
+};

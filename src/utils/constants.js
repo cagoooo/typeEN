@@ -49,15 +49,93 @@ export const ACHIEVEMENTS = [
 ];
 
 export const SHOP_ITEMS = [
-    { id: 'theme_neon_pink', name: '櫻花霓虹網格', type: 'theme', price: 100, icon: '🌸', value: 'rgba(244, 114, 182, 0.2)' },
-    { id: 'theme_matrix_green', name: '駭客任務綠', type: 'theme', price: 150, icon: '💻', value: 'rgba(74, 222, 128, 0.2)' },
-    { id: 'theme_cyber_yellow', name: '賽博黃金', type: 'theme', price: 200, icon: '⚡', value: 'rgba(250, 204, 21, 0.2)' },
-    { id: 'theme_blood_red', name: '腥紅之月', type: 'theme', price: 300, icon: '🩸', value: 'rgba(239, 68, 68, 0.2)' },
-    { id: 'theme_cosmic_purple', name: '星空幽紫', type: 'theme', price: 150, icon: '🌌', value: 'rgba(168, 85, 247, 0.2)' },
-    { id: 'theme_deep_sea', name: '深海湛藍', type: 'theme', price: 150, icon: '🌊', value: 'rgba(14, 165, 233, 0.2)' },
-    { id: 'effect_lightning', name: '閃電軌跡', type: 'effect', price: 200, icon: '⚡', description: '改變打字成功時的粒子為耀眼黃白交錯' },
-    { id: 'effect_cherry', name: '櫻花飄落', type: 'effect', price: 300, icon: '🌸', description: '溫柔的粉紅色與白色粒子效果' },
-    { id: 'effect_rainbow', name: '彩虹光譜', type: 'effect', price: 500, icon: '🌈', description: '隨機七彩的炫麗粒子' }
+    {
+        id: 'theme_neon_pink',
+        name: '櫻花霓虹網格',
+        type: 'theme',
+        price: 100,
+        icon: '🌸',
+        value: 'rgba(244, 114, 182, 0.2)',
+        description: '迷人的粉色氛圍',
+        longDescription: '這款主題將網格背景切換為夢幻的櫻花粉色調，並帶有微妙的霓虹波動效果。適合喜好柔和、浪漫風格的挑戰者。'
+    },
+    {
+        id: 'theme_matrix_green',
+        name: '駭客任務綠',
+        type: 'theme',
+        price: 150,
+        icon: '💻',
+        value: 'rgba(74, 222, 128, 0.2)',
+        description: '經典的數位代碼風',
+        longDescription: '靈感來自於經典科幻電影，深色背景搭配螢光綠網格，讓你在打字時彷彿化身為穿梭於虛擬世界的頂尖駭客。'
+    },
+    {
+        id: 'theme_cyber_yellow',
+        name: '賽博黃金',
+        type: 'theme',
+        price: 200,
+        icon: '⚡',
+        value: 'rgba(250, 204, 21, 0.2)',
+        description: '高能電力與黃金質感',
+        longDescription: '極具視覺衝擊力的明黃色霓虹燈效，代表著無窮的力量與速度。裝備此主題，讓你的挑戰過程如同閃電般耀眼奪目。'
+    },
+    {
+        id: 'theme_blood_red',
+        name: '腥紅之月',
+        type: 'theme',
+        price: 300,
+        icon: '🩸',
+        value: 'rgba(239, 68, 68, 0.2)',
+        description: '深沈的深紅神祕感',
+        longDescription: '這是一份專屬於高難度挑戰者的榮譽之色。深沉的血紅色網格能讓你更加集中專注，展現出絕對壓制的氣場。'
+    },
+    {
+        id: 'theme_cosmic_purple',
+        name: '星空幽紫',
+        type: 'theme',
+        price: 150,
+        icon: '🌌',
+        value: 'rgba(168, 85, 247, 0.2)',
+        description: '神祕廣闊的宇宙紫',
+        longDescription: '彷彿置身於無垠的星系之中。深邃的紫色霓虹能有效減緩視覺疲勞，助你在長途單字挑戰中保持優雅的節奏。'
+    },
+    {
+        id: 'theme_deep_sea',
+        name: '深海湛藍',
+        type: 'theme',
+        price: 150,
+        icon: '🌊',
+        value: 'rgba(14, 165, 233, 0.2)',
+        description: '冷靜沈穩的海藍色',
+        longDescription: '平靜如水的湛藍色調。適合在需要極高準確度的「完美主義」挑戰中使用，讓你的思緒如深海般沉穩、敏銳。'
+    },
+    {
+        id: 'effect_lightning',
+        name: '閃電軌跡',
+        type: 'effect',
+        price: 200,
+        icon: '⚡',
+        description: '打字成功時噴發耀眼黃白閃電粒子',
+        longDescription: '當你擊破字母時，會產生狂暴的閃電粒子噴發，展現極致的速度感！特別搭配「賽博黃金」主題效果更佳。'
+    },
+    {
+        id: 'effect_cherry',
+        name: '櫻花飄落',
+        type: 'effect',
+        price: 300,
+        icon: '🌸',
+        description: '打字成功時噴發夢幻櫻花粉粒子',
+        longDescription: '每一次成功的敲擊都會在螢幕上綻放出溫柔的粉色粒子，彷彿落櫻紛飛。這是優雅打字者的不二之選。'
+    },
+    {
+        id: 'effect_rainbow',
+        name: '彩虹光譜',
+        type: 'effect',
+        price: 500,
+        icon: '🌈',
+        description: '打字成功時噴發七彩繽紛隨機粒子',
+        longDescription: '商城中最昂貴的特效！匯聚了彩虹的所有色彩，字母擊破後的視覺饗宴能大幅提升你的打字樂趣與成就感。'
+    }
 ];
 
 export const BGM_CHOICES = [

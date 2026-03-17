@@ -468,7 +468,7 @@ const GameArea = ({ onGameEnd }) => {
             if (currentMode === 'BEGINNER') {
                 // Limit concurrent letters for beginners to prevent visual overload
                 // Check BEFORE spawning
-                if (engineState.current.letters.length >= 2) {
+                if (engineState.current.letters.length >= 3) {
                     setTimeout(() => spawnSequence(generation), 500);
                     return;
                 }
