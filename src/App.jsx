@@ -3,8 +3,9 @@ import GameArea from './components/GameArea';
 import Leaderboard from './components/Leaderboard';
 import { useGameStore } from './store/gameStore';
 import { Trophy, LogIn, LogOut, User as UserIcon, Award, ShoppingCart, Share2, Users, Fingerprint, Music } from 'lucide-react';
-import { subscribeToAuth, loginWithGoogle, logout, getUserProfile, syncStatsToCloud, syncAchievementsToCloud, upgradeToTeacher, joinClassUser, ensureUserDocument, incrementUserEffort } from './utils/userService';
-import { getLeaderboard, getUserRank } from './utils/leaderboardService';
+import { subscribeToAuth, loginWithGoogle, logout, getUserProfile, syncStatsToCloud, syncAchievementsToCloud, upgradeToTeacher, joinClassUser, ensureUserDocument, incrementUserEffort, syncEconomyToCloud } from './utils/userService';
+import DailyBonusModal from './components/DailyBonusModal';
+import DailyQuestsPanel from './components/DailyQuestsPanel';
 import AchievementToast from './components/AchievementToast';
 import AchievementDashboard from './components/AchievementDashboard';
 import Shop from './components/Shop';
@@ -182,16 +183,23 @@ function App() {
                     useGameStore.getState().setUnlockedAchievements(profile.achievements);
                 }
 
-                // Load shop data
-                if (profile?.unlockedItems !== undefined || profile?.coins !== undefined) {
+                // Load economy data (streak, quests)
+                if (profile?.streak || profile?.dailyQuests) {
                     useGameStore.setState(state => ({
-                        unlockedItems: profile.unlockedItems || state.unlockedItems,
-                        equippedBackground: profile.equippedBackground || state.equippedBackground,
-                        equippedEffect: profile.equippedEffect || state.equippedEffect,
-                        coins: profile.coins !== undefined ? profile.coins : state.coins
+                        streak: profile.streak || state.streak,
+                        dailyQuests: profile.dailyQuests || state.dailyQuests
                     }));
                 }
 
+                // Check daily login
+                useGameStore.getState().checkDailyLogin();
+
+                // Sync back to cloud just in case local had more recent streak data (e.g. guest joined)
+                const stateAfterLogin = useGameStore.getState();
+                syncEconomyToCloud(user.uid, {
+                    streak: stateAfterLogin.streak,
+                    dailyQuests: stateAfterLogin.dailyQuests
+                });
             } else {
                 // User is not signed in (or signed out)
                 // Firebase Auth with browserLocalPersistence fires null only when truly signed out
@@ -249,15 +257,38 @@ function App() {
 
         // Calculate earned coins first to include in result
         let earnedCoins = 0;
+        const currentHour = new Date().getHours();
+        const isFeverTime = currentHour === 16; // 16:00 - 17:00
+
         if (isWin || state.mode === 'ENDLESS') {
             earnedCoins = Math.floor(state.maxCombo / 2) + Math.floor(state.completedCount / 5);
             if (state.mode === 'ENDLESS') earnedCoins += Math.floor(state.gameTime / 10);
+
+            // Fever Time 2x Bonus
+            if (isFeverTime) earnedCoins *= 2;
+
+            // Phase 6: Coin Booster
+            if (state.activeBoosters && state.activeBoosters.endTime > Date.now()) {
+                earnedCoins *= (state.activeBoosters.coinMultiplier || 1);
+                // Consume booster after use
+                useGameStore.setState({ activeBoosters: null });
+            }
 
             if (earnedCoins > 0) {
                 const currentCoins = state.coins || 0;
                 state.setCoins(currentCoins + earnedCoins);
             }
         }
+
+        // Update Daily Quests Progress
+        state.updateQuestProgress('COMPLETED_GAME', 1, { mode: state.mode });
+        state.updateQuestProgress('MAX_COMBO', state.maxCombo);
+
+        // For accuracy, we need to pass the accuracy value. 
+        // Assuming extraData.accuracy exists, else we calculate it roughly or skip.
+        // Let's assume GameArea sends it now or we use 100% if isWin and no missed.
+        const accuracy = extraData.accuracy || (isWin && Object.keys(extraData.missedLetters || {}).length === 0 ? 100 : 0);
+        state.updateQuestProgress('ACCURACY', accuracy);
 
         const result = {
             isWin,
@@ -394,6 +425,12 @@ function App() {
                     });
                 });
             }
+
+            // Sync economy data (streak, quests)
+            syncEconomyToCloud(currentUser.uid, {
+                streak: stateNow.streak,
+                dailyQuests: stateNow.dailyQuests
+            });
         }
     }, [bestStats, setGameState]);
 
@@ -403,6 +440,7 @@ function App() {
             <div className="crt-vignette"></div>
             <div className="crt-overlay"></div>
             <AchievementToast />
+            <DailyBonusModal />
 
             {/* Campaign Map */}
             {gameState === 'CAMPAIGN_MAP' && <CampaignMap />}
@@ -443,17 +481,26 @@ function App() {
                                         }}
                                         title={userProfile.role === 'teacher' ? '導師權限已開通' : '長按 3 秒解鎖隱藏功能'}
                                     >
-                                        {userProfile.photoURL ? (
-                                            <img src={userProfile.photoURL} alt="User avatar" draggable="false" className="w-10 h-10 rounded-full border border-indigo-400 select-none" />
-                                        ) : (
-                                            <div className="w-10 h-10 rounded-full bg-indigo-900 flex items-center justify-center border border-indigo-400">
-                                                <UserIcon className="w-6 h-6 text-indigo-300" />
-                                            </div>
-                                        )}
+                                        <div className={`relative flex items-center justify-center w-12 h-12 rounded-full overflow-hidden ${userProfile.appearance?.border && userProfile.appearance.border !== 'none' ? `border-${userProfile.appearance.border}` : 'border border-indigo-400'}`}>
+                                            {userProfile.photoURL ? (
+                                                <img src={userProfile.photoURL} alt="User avatar" draggable="false" className="w-full h-full object-cover select-none" />
+                                            ) : (
+                                                <div className="w-full h-full bg-indigo-900 flex items-center justify-center">
+                                                    <span className="text-2xl">
+                                                        {APPEARANCE_ITEMS.avatars.find(a => a.id === (userProfile.appearance?.avatar || 'default'))?.icon || '👤'}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                         <div className="flex flex-col pr-2 hidden sm:flex text-left relative group">
+                                            {userProfile.appearance?.title && (
+                                                <span className="text-[10px] text-fuchsia-400 font-bold tracking-tighter -mb-1 opacity-80">
+                                                    《{userProfile.appearance.title}》
+                                                </span>
+                                            )}
                                             <span className="text-white font-bold text-sm transition-colors flex items-center gap-1 group-hover:text-indigo-300">
                                                 {userProfile.displayName || '特工'}
-                                                {userProfile.role === 'teacher' && <span className="text-[10px] text-emerald-400 border border-emerald-500/50 bg-emerald-500/20 px-1 rounded">導師</span>}
+                                                {userProfile.role === 'teacher' && <span className="text-[10px] text-emerald-400 border border-emerald-500/50 bg-emerald-500/20 px-1 rounded ml-1">導師</span>}
                                             </span>
                                             <div className="flex items-center gap-1 text-xs font-['Orbitron'] text-yellow-400">
                                                 <span>🪙 {userProfile.coins || 0}</span>
@@ -612,6 +659,11 @@ function App() {
                                     <span>🔥 <span className="text-orange-400 font-bold">{bestStats.wordCombo || 0}</span></span>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Daily Quests Section */}
+                        <div className="mt-8 w-full max-w-lg mx-auto mb-10">
+                            <DailyQuestsPanel />
                         </div>
                     </div>
                 </div>

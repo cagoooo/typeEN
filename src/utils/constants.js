@@ -138,6 +138,35 @@ export const SHOP_ITEMS = [
     }
 ];
 
+export const CONSUMABLES = [
+    { id: 'shield', name: '守護盾', price: 50, icon: '🛡️', description: '抵擋一次失誤', longDescription: '裝備後可抵擋一次按錯鍵造成的扣血或連擊中斷。' },
+    { id: 'timeFreeze', name: '時光停滯', price: 80, icon: '❄️', description: '暫停方塊下落 3 秒', longDescription: '使用時可讓所有字母方塊停止下落 3 秒，為你爭取思考與調整的時間。' },
+    { id: 'booster', name: '金幣加倍券', price: 120, icon: '💰', description: '下一局金幣獲得量 200%', longDescription: '使用後，在一小時內完成的下一局遊戲將獲得雙倍的金幣獎勵。' }
+];
+
+export const APPEARANCE_ITEMS = {
+    avatars: [
+        { id: 'default', name: '預設頭像', price: 0, icon: '👤' },
+        { id: 'hacker', name: '數位駭客', price: 500, icon: '👨‍💻' },
+        { id: 'ninja', name: '影武者', price: 500, icon: '🥷' },
+        { id: 'pilot', name: '王牌飛行員', price: 800, icon: '👨‍🚀' },
+        { id: 'dragon', name: '屠龍勇者', price: 1000, icon: '🐲' }
+    ],
+    borders: [
+        { id: 'none', name: '無邊框', price: 0 },
+        { id: 'neon_blue', name: '藍色霓虹', price: 300 },
+        { id: 'gold_glory', name: '黃金榮耀', price: 600 },
+        { id: 'purple_void', name: '虛空幽紫', price: 450 }
+    ],
+    titles: [
+        { id: '新手打字員', name: '新手打字員', price: 0 },
+        { id: '超音速', name: '超音速', price: 1000 },
+        { id: '精準之鬼', name: '精準之鬼', price: 1000 },
+        { id: '鍵盤農夫', name: '鍵盤農夫', price: 1000 },
+        { id: '光之翼', name: '光之翼', price: 2000 }
+    ]
+};
+
 export const BGM_CHOICES = [
     { id: 'bgm_auto', name: '隨機撥放 (Auto)', url: 'auto' },
     { id: 'bgm_reset', name: '賽博重置 (RESET)', url: './audio/bgm_1.mp3' },

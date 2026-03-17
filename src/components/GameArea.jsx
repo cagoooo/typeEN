@@ -4,6 +4,7 @@ import { playSound } from '../utils/audio';
 import { audioEngine } from '../utils/audioEngine';
 import { useGameStore } from '../store/gameStore';
 import { CAMPAIGN_LEVELS } from '../utils/levels';
+import { Shield, Clock } from 'lucide-react';
 import HandsHint from './HandsHint';
 
 const INITIAL_LETTER_Y_POS = -80;
@@ -41,6 +42,12 @@ const GameArea = ({ onGameEnd }) => {
     const resetCombo = useGameStore(state => state.resetCombo);
     const equippedBackground = useGameStore(state => state.equippedBackground);
     const currentCampaignLevel = useGameStore(state => state.currentCampaignLevel);
+
+    // Phase 6 Consumables
+    const consumables = useGameStore(state => state.consumables);
+    const useConsumable = useGameStore(state => state.useConsumable);
+    const isShieldActive = useGameStore(state => state.isShieldActive);
+    const isTimeFrozen = useGameStore(state => state.isTimeFrozen);
 
     const levelConfigRef = useRef(null);
     // Use useMemo to compute levelConfig without side effects in render
@@ -291,6 +298,19 @@ const GameArea = ({ onGameEnd }) => {
             if (targetIdx !== -1) {
                 processHit(targetIdx);
             } else {
+                if (isShieldActive) {
+                    useGameStore.setState({ isShieldActive: false });
+                    engineState.current.floatingTexts.push({
+                        x: canvasWidth / 2,
+                        y: canvasHeight / 2,
+                        text: '🛡️ 護盾生效！',
+                        colorHex: '#38bdf8',
+                        life: 1.0
+                    });
+                    playSound('hit'); // Use a different sound if available, but for now hit is okay
+                    return;
+                }
+
                 playSound('miss');
                 resetCombo();
                 triggerShake();
@@ -313,8 +333,21 @@ const GameArea = ({ onGameEnd }) => {
             }
         };
 
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
+        const handleKeys = (e) => {
+            if (e.key === '1') {
+                if (useConsumable('shield')) {
+                    engineState.current.floatingTexts.push({ x: window.innerWidth / 2, y: window.innerHeight / 2, text: '🛡️ 護盾啟動！', colorHex: '#38bdf8', life: 1.0 });
+                }
+            } else if (e.key === '2') {
+                if (useConsumable('timeFreeze')) {
+                    engineState.current.floatingTexts.push({ x: window.innerWidth / 2, y: window.innerHeight / 2, text: '❄️ 時光停滯！', colorHex: '#67e8f9', life: 1.0 });
+                }
+            }
+            handleKeyDown(e);
+        };
+
+        window.addEventListener('keydown', handleKeys);
+        return () => window.removeEventListener('keydown', handleKeys);
     }, [processHit]);
 
     const handleCanvasPointerDown = (e) => {
@@ -517,6 +550,9 @@ const GameArea = ({ onGameEnd }) => {
             if (deltaTime > 5) deltaTime = 5;
 
             lastTime = currentTime;
+
+            // Phase 6: Time Freeze effect
+            if (isTimeFrozen) deltaTime = 0;
 
             const width = canvas.width;
             const height = canvas.height;
@@ -863,6 +899,47 @@ const GameArea = ({ onGameEnd }) => {
                         時間: {gameTime}s
                     </div>
                 </div>
+            </div>
+
+            {/* Consumables HUD */}
+            <div className="absolute bottom-24 right-10 flex flex-col gap-4 z-30">
+                <button
+                    onClick={() => useConsumable('shield')}
+                    disabled={consumables.shield <= 0 || isShieldActive}
+                    className={`relative p-3 rounded-xl border flex flex-col items-center justify-center transition-all ${isShieldActive
+                        ? 'bg-sky-500/40 border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.5)]'
+                        : consumables.shield > 0
+                            ? 'bg-black/60 border-white/20 hover:border-sky-500 hover:bg-black/80'
+                            : 'bg-black/20 border-white/5 opacity-40 cursor-not-allowed'
+                        }`}
+                    title="[1] 護盾：抵擋一次失誤"
+                >
+                    <Shield className={`w-8 h-8 ${isShieldActive ? 'text-white animate-pulse' : 'text-sky-400'}`} />
+                    <span className="text-[12px] font-bold text-white mt-1">{consumables.shield}</span>
+                    <span className="text-[9px] text-gray-400">鍵盤 [1]</span>
+                    {isShieldActive && (
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-sky-400 rounded-full animate-ping"></div>
+                    )}
+                </button>
+
+                <button
+                    onClick={() => useConsumable('timeFreeze')}
+                    disabled={consumables.timeFreeze <= 0 || isTimeFrozen}
+                    className={`relative p-3 rounded-xl border flex flex-col items-center justify-center transition-all ${isTimeFrozen
+                        ? 'bg-cyan-500/40 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]'
+                        : consumables.timeFreeze > 0
+                            ? 'bg-black/60 border-white/20 hover:border-cyan-500 hover:bg-black/80'
+                            : 'bg-black/20 border-white/5 opacity-40 cursor-not-allowed'
+                        }`}
+                    title="[2] 時光停滯：暫停下落 3 秒"
+                >
+                    <Clock className={`w-8 h-8 ${isTimeFrozen ? 'text-white animate-pulse' : 'text-cyan-400'}`} />
+                    <span className="text-[12px] font-bold text-white mt-1">{consumables.timeFreeze}</span>
+                    <span className="text-[9px] text-gray-400">鍵盤 [2]</span>
+                    {isTimeFrozen && (
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-cyan-400 rounded-full animate-ping"></div>
+                    )}
+                </button>
             </div>
 
             <canvas

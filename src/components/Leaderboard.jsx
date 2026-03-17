@@ -136,8 +136,30 @@ const Leaderboard = ({ onClose }) => {
                                             }`}>
                                             #{index + 1}
                                         </div>
-                                        <div className="col-span-5 sm:col-span-5 font-bold text-lg md:text-xl text-white truncate group-hover:text-indigo-300 transition-colors">
-                                            {score.playerName}
+                                        <div className="col-span-5 sm:col-span-5 flex items-center gap-3 font-bold group-hover:text-indigo-300 transition-colors truncate">
+                                            {/* Avatar with Border */}
+                                            <div className={`relative flex-shrink-0 w-10 h-10 rounded-full overflow-hidden flex items-center justify-center ${score.appearance?.border && score.appearance.border !== 'none' ? `border-${score.appearance.border}` : 'border border-gray-700 bg-gray-900/50'}`}>
+                                                {score.photoURL ? (
+                                                    <img src={score.photoURL} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <span className="text-xl">
+                                                        {score.appearance?.avatar ? (
+                                                            APPEARANCE_ITEMS.avatars.find(a => a.id === score.appearance.avatar)?.icon || '👤'
+                                                        ) : '👤'}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className="flex flex-col truncate">
+                                                {score.appearance?.title && (
+                                                    <span className="text-[10px] text-fuchsia-400 font-bold tracking-tighter opacity-70">
+                                                        《{score.appearance.title}》
+                                                    </span>
+                                                )}
+                                                <span className="text-white text-lg md:text-xl truncate group-hover:text-indigo-300">
+                                                    {score.playerName}
+                                                </span>
+                                            </div>
                                         </div>
                                         <div className="col-span-5 sm:col-span-6 grid grid-cols-2 md:grid-cols-3 gap-2 text-right md:text-center font-['Orbitron']">
                                             <div className={`col-span-1 font-bold ${modeColor}`}>

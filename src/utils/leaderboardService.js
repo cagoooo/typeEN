@@ -43,7 +43,8 @@ export const getLeaderboard = async (gameMode, maxResults = 100) => {
                 endlessCompleted: data.stats?.endlessCompleted,
                 normalCompleted: data.stats?.normalCompleted,
                 wordCompleted: data.stats?.wordCompleted,
-                beginnerCompleted: data.stats?.beginnerCompleted
+                beginnerCompleted: data.stats?.beginnerCompleted,
+                appearance: data.appearance || { avatar: 'default', border: 'none', title: '探員' }
             });
         });
 

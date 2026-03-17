@@ -91,6 +91,38 @@
         pointer-events: none;
         z-index: 90;
     }
+
+    /* Avatar Borders */
+    .border-neon_blue {
+        border: 2px solid #60a5fa;
+        box-shadow: 0 0 10px #3b82f6, inset 0 0 5px #3b82f6;
+        padding: 2px;
+    }
+
+    .border-gold_glory {
+        border: 2px solid #fbbf24;
+        box-shadow: 0 0 15px #f59e0b, inset 0 0 8px #f59e0b;
+        padding: 2px;
+        background: linear-gradient(45deg, #f59e0b, #fbbf24);
+        -webkit-background-clip: padding-box;
+    }
+
+    .border-purple_void {
+        border: 2px solid #a855f7;
+        box-shadow: 0 0 12px #7c3aed, inset 0 0 6px #7c3aed;
+        padding: 2px;
+        animation: pulse-border-purple 2s infinite alternate;
+    }
+}
+
+@keyframes pulse-border-purple {
+    0% {
+        box-shadow: 0 0 5px #7c3aed, inset 0 0 2px #7c3aed;
+    }
+
+    100% {
+        box-shadow: 0 0 15px #a855f7, inset 0 0 10px #a855f7;
+    }
 }
 
 @keyframes pulse-warning {
