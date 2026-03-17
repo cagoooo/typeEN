@@ -60,7 +60,16 @@ export const ensureUserDocument = async (user) => {
                 normalTime: 999,
                 endlessTime: 0,
                 wordTime: 999
-            }
+            },
+            streak: { count: 0, lastDate: null },
+            dailyQuests: { date: null, tasks: [] },
+            consumables: { shield: 0, timeFreeze: 0, booster: 0 },
+            appearance: { avatar: 'default', border: 'none', title: '新手打字員' },
+            unlockedAvatars: ['default'],
+            unlockedBorders: ['none'],
+            unlockedTitles: ['新手打字員'],
+            unlockedItems: []
+
         });
     } else {
         // Update last login
@@ -183,6 +192,18 @@ export const syncShopToCloud = async (uid, shopData) => {
     });
 };
 
+// Sync economy data (streak, quests) to Firestore
+export const syncEconomyToCloud = async (uid, economyData) => {
+    if (!uid) return;
+    const userRef = doc(db, USERS_COLLECTION, uid);
+
+    // economyData = { streak, dailyQuests, consumables, appearance, unlockedAvatars, ... }
+    await updateDoc(userRef, {
+        ...economyData,
+        lastSyncedAt: serverTimestamp()
+    });
+};
+
 // Upgrade user to teacher role
 export const upgradeToTeacher = async (uid, secretInput) => {
     if (!uid) return false;
@@ -253,7 +274,7 @@ export const getClassStudents = async (classId) => {
 };
 
 // Join a class by code (Student action)
-export const joinClassUser = async (uid, code) => {
+export const joinClassUser = async (uid, code, studentClassName = '', seatNumber = '') => {
     if (!uid || !code.trim()) return { success: false, message: "無效代碼" };
     try {
         const q = query(
@@ -271,7 +292,11 @@ export const joinClassUser = async (uid, code) => {
 
         const userRef = doc(db, USERS_COLLECTION, uid);
         await updateDoc(userRef, {
-            joinedClasses: arrayUnion(classId)
+            joinedClasses: arrayUnion(classId),
+            classInfo: {
+                className: studentClassName.trim(),
+                seatNumber: seatNumber.trim()
+            }
         });
 
         return { success: true, message: `成功加入 ${classData.name}！`, className: classData.name };

@@ -4,6 +4,8 @@ import { joinClassUser } from '../utils/userService';
 
 const JoinClassModal = ({ userProfile, onClose, onJoinSuccess }) => {
     const [code, setCode] = useState('');
+    const [studentClassName, setStudentClassName] = useState('');
+    const [seatNumber, setSeatNumber] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 
@@ -14,7 +16,7 @@ const JoinClassModal = ({ userProfile, onClose, onJoinSuccess }) => {
         setIsSubmitting(true);
         setError('');
 
-        const result = await joinClassUser(userProfile.uid, code);
+        const result = await joinClassUser(userProfile.uid, code, studentClassName, seatNumber);
 
         if (result.success) {
             onJoinSuccess(result.message);
@@ -40,20 +42,51 @@ const JoinClassModal = ({ userProfile, onClose, onJoinSuccess }) => {
 
                 <form onSubmit={handleSubmit} className="p-6">
                     <p className="text-gray-400 text-sm mb-4 text-center">
-                        請輸入導師提供的 6 碼專屬代碼以同步您的任務紀錄
+                        請輸入導師提供的 6 碼專屬代碼與您的班級資訊
                     </p>
 
-                    <div className="mb-4">
-                        <input
-                            type="text"
-                            value={code}
-                            onChange={(e) => setCode(e.target.value.toUpperCase())}
-                            placeholder="例如: NEON88"
-                            maxLength={6}
-                            required
-                            className="w-full bg-gray-800 border-2 border-gray-700 text-white font-mono text-center text-3xl tracking-[0.2em] px-4 py-4 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors uppercase shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]"
-                            disabled={isSubmitting}
-                        />
+                    <div className="space-y-4 mb-6">
+                        <div>
+                            <label className="block text-xs text-emerald-400/70 mb-1 ml-1 uppercase tracking-tighter">班級代碼</label>
+                            <input
+                                type="text"
+                                value={code}
+                                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                                placeholder="例如: NEON88"
+                                maxLength={6}
+                                required
+                                className="w-full bg-gray-800 border-2 border-gray-700 text-white font-mono text-center text-2xl tracking-[0.2em] px-4 py-3 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors uppercase shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]"
+                                disabled={isSubmitting}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs text-emerald-400/70 mb-1 ml-1 uppercase tracking-tighter">你的班級</label>
+                                <input
+                                    type="text"
+                                    value={studentClassName}
+                                    onChange={(e) => setStudentClassName(e.target.value)}
+                                    placeholder="如: 301"
+                                    required
+                                    className="w-full bg-gray-800 border-2 border-gray-700 text-white text-center py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 transition-colors"
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-emerald-400/70 mb-1 ml-1 uppercase tracking-tighter">你的座號</label>
+                                <input
+                                    type="text"
+                                    value={seatNumber}
+                                    onChange={(e) => setSeatNumber(e.target.value.replace(/\D/g, ''))}
+                                    placeholder="如: 05"
+                                    maxLength={2}
+                                    required
+                                    className="w-full bg-gray-800 border-2 border-gray-700 text-white text-center py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 transition-colors"
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {error && (
@@ -64,7 +97,7 @@ const JoinClassModal = ({ userProfile, onClose, onJoinSuccess }) => {
 
                     <button
                         type="submit"
-                        disabled={!code.trim() || isSubmitting}
+                        disabled={!code.trim() || !studentClassName.trim() || !seatNumber.trim() || isSubmitting}
                         className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-bold rounded-xl transition-all hover:shadow-[0_0_15px_rgba(16,185,129,0.4)] disabled:shadow-none tracking-widest text-lg"
                     >
                         {isSubmitting ? '驗證中...' : '確認加入'}
