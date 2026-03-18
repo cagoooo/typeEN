@@ -12,7 +12,7 @@ const TeacherDashboard = ({ userProfile, onClose }) => {
     const [newClassName, setNewClassName] = useState('');
     const [copiedCode, setCopiedCode] = useState(null);
     const [showQrModal, setShowQrModal] = useState(false);
-    const [sortKey, setSortKey] = useState('seatNumber'); // Default sort by seat
+    const [sortKey, setSortKey] = useState('name'); // Default sort by name
     const [sortOrder, setSortOrder] = useState('asc');
 
     // ... (keep useEffects and other functions as they are)
@@ -25,12 +25,6 @@ const TeacherDashboard = ({ userProfile, onClose }) => {
             if (sortKey === 'name') {
                 valA = a.displayName || '';
                 valB = b.displayName || '';
-            } else if (sortKey === 'class') {
-                valA = a.classInfo?.className || '';
-                valB = b.classInfo?.className || '';
-            } else if (sortKey === 'seatNumber') {
-                valA = parseInt(a.classInfo?.seatNumber || '999', 10);
-                valB = parseInt(b.classInfo?.seatNumber || '999', 10);
             } else if (sortKey === 'beginner') {
                 valA = a.stats?.beginnerTime || 999;
                 valB = b.stats?.beginnerTime || 999;
@@ -105,11 +99,9 @@ const TeacherDashboard = ({ userProfile, onClose }) => {
     const handleExportCSV = () => {
         if (!selectedClass || !students.length) return;
 
-        const headers = ['班級', '座號', '學生姓名', 'Email', '初管理者最佳(s)', '一般最佳(s)', '單字挑戰最佳(s)', '無盡生存(s)', '總遊玩次數', '總遊玩時長(s)', '成就數量'];
+        const headers = ['學生姓名', 'Email', '初管理者最佳(s)', '一般最佳(s)', '單字挑戰最佳(s)', '無盡生存(s)', '總遊玩次數', '總遊玩時長(s)', '成就數量'];
 
         const rows = students.map(student => [
-            `"${student.classInfo?.className || ''}"`,
-            `"${student.classInfo?.seatNumber || ''}"`,
             `"${student.displayName || '未命名'}"`,
             `"${student.email || ''}"`,
             student.stats?.beginnerTime === 999 ? 'N/A' : (student.stats?.beginnerTime || 'N/A'),
@@ -228,8 +220,6 @@ const TeacherDashboard = ({ userProfile, onClose }) => {
                                     <div className="flex flex-wrap items-center gap-2">
                                         <div className="flex items-center bg-gray-800 rounded-lg p-1 mr-2 border border-gray-700">
                                             <span className="text-xs text-gray-500 px-2 flex items-center gap-1"><ArrowUpDown className="w-3 h-3" /> 排序:</span>
-                                            <button onClick={() => toggleSort('seatNumber')} className={`px-2 py-1 text-xs rounded transition-colors ${sortKey === 'seatNumber' ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-400 hover:text-white'}`}>座號</button>
-                                            <button onClick={() => toggleSort('class')} className={`px-2 py-1 text-xs rounded transition-colors ${sortKey === 'class' ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-400 hover:text-white'}`}>班級</button>
                                             <button onClick={() => toggleSort('name')} className={`px-2 py-1 text-xs rounded transition-colors ${sortKey === 'name' ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-400 hover:text-white'}`}>姓名</button>
                                             <button onClick={() => toggleSort('beginner')} className={`px-2 py-1 text-xs rounded transition-colors ${sortKey === 'beginner' ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-400 hover:text-white'}`}>初學</button>
                                         </div>
@@ -287,15 +277,9 @@ const TeacherDashboard = ({ userProfile, onClose }) => {
                                                             </div>
                                                         )}
                                                         <div className="flex-1 overflow-hidden">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="font-mono text-xs font-bold bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30">
-                                                                    {student.classInfo?.seatNumber ? `${student.classInfo.seatNumber} 號` : '--'}
-                                                                </span>
-                                                                <div className="font-bold text-white truncate text-lg group-hover:text-emerald-400 transition-colors">{student.displayName || '未命名特工'}</div>
-                                                            </div>
-                                                            <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-1">
-                                                                <span className="bg-gray-800 px-1.5 rounded">{student.classInfo?.className || '未知班級'}</span>
-                                                                <span className="truncate max-w-[100px]">{student.email}</span>
+                                                            <div className="font-bold text-white truncate text-lg group-hover:text-emerald-400 transition-colors">{student.displayName || '未命名特工'}</div>
+                                                            <div className="text-[10px] text-gray-500 mt-1 truncate">
+                                                                {student.email}
                                                             </div>
                                                         </div>
                                                     </div>
