@@ -17,7 +17,7 @@ import ResultShareCard from './components/ResultShareCard';
 import CampaignMap from './components/CampaignMap';
 import StoryCutscene from './components/StoryCutscene';
 import { CAMPAIGN_LEVELS } from './utils/levels';
-import { BGM_CHOICES } from './utils/constants';
+import { BGM_CHOICES, APPEARANCE_ITEMS } from './utils/constants';
 import { encryptData, decryptData } from './utils/crypto';
 
 function App() {

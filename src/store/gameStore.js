@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { encryptData, decryptData } from '../utils/crypto';
+import { APPEARANCE_ITEMS } from '../utils/constants';
 
 // Try to load initial guest data
 const guestDataString = localStorage.getItem('typeEN_guestData');

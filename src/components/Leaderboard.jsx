@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getLeaderboard } from '../utils/leaderboardService';
+import { APPEARANCE_ITEMS } from '../utils/constants';
 import { Trophy, Clock, Target, Flame, X, Loader } from 'lucide-react';
 
 const Leaderboard = ({ onClose }) => {
