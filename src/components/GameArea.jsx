@@ -863,50 +863,59 @@ const GameArea = ({ onGameEnd }) => {
     }, []);
 
     return (
-        <div
-            className={`relative w-full h-full overflow-hidden ${shake ? 'animate-shake' : ''} `}
-            style={{
-                transform: `scale(${1 + Math.min(combo * 0.005, 0.15)})`,
-                transition: 'transform 0.3s ease-out'
-            }}
-        >
-            <div className="absolute inset-0 z-0 opacity-30 perspective-1000 transition-colors duration-700">
-                <div
-                    className={`absolute inset-0 ${gridClass} transform rotate-x-60 scale-150 origin-bottom transition-all duration-700`}
-                    style={gridStyle}
-                ></div>
+        <div className="relative w-full h-full overflow-hidden">
+            {/* Gameplay Layer (Scalable & Shakeable) */}
+            <div
+                className={`absolute inset-0 ${shake ? 'animate-shake' : ''}`}
+                style={{
+                    transform: `scale(${1 + Math.min(combo * 0.005, 0.15)})`,
+                    transition: 'transform 0.3s ease-out'
+                }}
+            >
+                <div className="absolute inset-0 z-0 opacity-30 perspective-1000 transition-colors duration-700">
+                    <div
+                        className={`absolute inset-0 ${gridClass} transform rotate-x-60 scale-150 origin-bottom transition-all duration-700`}
+                        style={gridStyle}
+                    ></div>
+                </div>
+
+                {health <= 3 && <div className="health-warning transition-opacity duration-300"></div>}
+
+                <canvas
+                    ref={canvasRef}
+                    className="absolute inset-0 z-20 w-full h-full touch-none"
+                />
             </div>
 
-            {health <= 3 && <div className="health-warning transition-opacity duration-300"></div>}
-
+            {/* UI Layer (Stable) */}
             <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-30 font-['Orbitron']">
                 <div className="flex gap-4">
-                    <div className="bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2 rounded-xl text-white shadow-[0_0_15px_rgba(255,255,255,0.1)] font-sans font-bold">
+                    <div className="bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2 rounded-xl text-white shadow-[0_0_15px_rgba(255,255,255,0.1)] font-sans font-bold text-sm md:text-base">
                         {mode === 'NORMAL' ? `進度: ${completedCount} /${ALPHABET.length}` : mode === 'WORD' ? `進度: ${completedCount}/10` : `擊破: ${completedCount} `}
                     </div>
-                    <div className="bg-red-500/20 backdrop-blur-md border border-red-500/30 px-4 py-2 rounded-xl text-red-200 shadow-[0_0_15px_rgba(239,68,68,0.2)] font-sans font-bold">
+                    <div className="bg-red-500/20 backdrop-blur-md border border-red-500/30 px-4 py-2 rounded-xl text-red-200 shadow-[0_0_15px_rgba(239,68,68,0.2)] font-sans font-bold text-sm md:text-base">
                         生命: {health}
                     </div>
                 </div>
 
                 <div className="flex gap-4">
                     {combo > 1 && (
-                        <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500 animate-pulse drop-shadow-[0_0_10px_rgba(250,204,21,0.5)] font-sans">
+                        <div className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500 animate-pulse drop-shadow-[0_0_10px_rgba(250,204,21,0.5)] font-sans">
                             {combo} 連擊！
                         </div>
                     )}
-                    <div className="bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2 rounded-xl text-white shadow-[0_0_15px_rgba(255,255,255,0.1)] font-sans font-bold">
+                    <div className="bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2 rounded-xl text-white shadow-[0_0_15px_rgba(255,255,255,0.1)] font-sans font-bold text-sm md:text-base">
                         時間: {gameTime}s
                     </div>
                 </div>
             </div>
 
-            {/* Consumables HUD */}
-            <div className="absolute bottom-24 right-10 flex flex-col gap-4 z-30">
+            {/* Consumables HUD (Stable) */}
+            <div className="absolute bottom-24 right-4 md:right-10 flex flex-col gap-4 z-30">
                 <button
                     onClick={() => useConsumable('shield')}
                     disabled={consumables.shield <= 0 || isShieldActive}
-                    className={`relative p-3 rounded-xl border flex flex-col items-center justify-center transition-all ${isShieldActive
+                    className={`relative p-2 md:p-3 rounded-xl border flex flex-col items-center justify-center transition-all ${isShieldActive
                         ? 'bg-sky-500/40 border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.5)]'
                         : consumables.shield > 0
                             ? 'bg-black/60 border-white/20 hover:border-sky-500 hover:bg-black/80'
@@ -914,18 +923,18 @@ const GameArea = ({ onGameEnd }) => {
                         }`}
                     title="[1] 護盾：抵擋一次失誤"
                 >
-                    <Shield className={`w-8 h-8 ${isShieldActive ? 'text-white animate-pulse' : 'text-sky-400'}`} />
-                    <span className="text-[12px] font-bold text-white mt-1">{consumables.shield}</span>
-                    <span className="text-[9px] text-gray-400">鍵盤 [1]</span>
+                    <Shield className={`w-6 h-6 md:w-8 md:h-8 ${isShieldActive ? 'text-white animate-pulse' : 'text-sky-400'}`} />
+                    <span className="text-[10px] md:text-[12px] font-bold text-white mt-1">{consumables.shield}</span>
+                    <span className="text-[8px] md:text-[9px] text-gray-400">鍵盤 [1]</span>
                     {isShieldActive && (
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-sky-400 rounded-full animate-ping"></div>
+                        <div className="absolute -top-1 -right-1 w-2 h-2 md:w-3 md:h-3 bg-sky-400 rounded-full animate-ping"></div>
                     )}
                 </button>
 
                 <button
                     onClick={() => useConsumable('timeFreeze')}
                     disabled={consumables.timeFreeze <= 0 || isTimeFrozen}
-                    className={`relative p-3 rounded-xl border flex flex-col items-center justify-center transition-all ${isTimeFrozen
+                    className={`relative p-2 md:p-3 rounded-xl border flex flex-col items-center justify-center transition-all ${isTimeFrozen
                         ? 'bg-cyan-500/40 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]'
                         : consumables.timeFreeze > 0
                             ? 'bg-black/60 border-white/20 hover:border-cyan-500 hover:bg-black/80'
@@ -933,23 +942,19 @@ const GameArea = ({ onGameEnd }) => {
                         }`}
                     title="[2] 時光停滯：暫停下落 3 秒"
                 >
-                    <Clock className={`w-8 h-8 ${isTimeFrozen ? 'text-white animate-pulse' : 'text-cyan-400'}`} />
-                    <span className="text-[12px] font-bold text-white mt-1">{consumables.timeFreeze}</span>
-                    <span className="text-[9px] text-gray-400">鍵盤 [2]</span>
+                    <Clock className={`w-6 h-6 md:w-8 md:h-8 ${isTimeFrozen ? 'text-white animate-pulse' : 'text-cyan-400'}`} />
+                    <span className="text-[10px] md:text-[12px] font-bold text-white mt-1">{consumables.timeFreeze}</span>
+                    <span className="text-[8px] md:text-[9px] text-gray-400">鍵盤 [2]</span>
                     {isTimeFrozen && (
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-cyan-400 rounded-full animate-ping"></div>
+                        <div className="absolute -top-1 -right-1 w-2 h-2 md:w-3 md:h-3 bg-cyan-400 rounded-full animate-ping"></div>
                     )}
                 </button>
             </div>
 
-            <canvas
-                ref={canvasRef}
-                className="absolute inset-0 z-20 w-full h-full touch-none"
-            />
-
             <HandsHint activeLetters={syncLetters} />
         </div>
     );
+
 };
 
 export default GameArea;

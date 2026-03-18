@@ -218,6 +218,19 @@ function App() {
         return () => unsubscribe();
     }, [setUserProfile]);
 
+    const dailyQuests = useGameStore(state => state.dailyQuests);
+    const streak = useGameStore(state => state.streak);
+
+    // Sync dailyQuests and streak to cloud when they change (if logged in)
+    useEffect(() => {
+        if (userProfile?.uid) {
+            syncEconomyToCloud(userProfile.uid, {
+                streak,
+                dailyQuests
+            });
+        }
+    }, [dailyQuests, streak, userProfile?.uid]);
+
     useEffect(() => {
         // Check URL for shared profile
         const urlParams = new URLSearchParams(window.location.search);

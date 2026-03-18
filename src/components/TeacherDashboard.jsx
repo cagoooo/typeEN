@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Plus, Users, RefreshCw, Copy, Check, QrCode, Download, SortAsc, SortDesc, ArrowUpDown, User as UserIcon } from 'lucide-react';
+import { X, Plus, Users, RefreshCw, Copy, Check, QrCode, Download, SortAsc, SortDesc, ArrowUpDown, User as UserIcon, Trash2, RotateCcw } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { getTeacherClasses, createClass, getClassStudents } from '../utils/userService';
+import { getTeacherClasses, createClass, getClassStudents, removeStudentFromClass, resetUserStats } from '../utils/userService';
+import { useGameStore } from '../store/gameStore';
 
 const TeacherDashboard = ({ userProfile, onClose }) => {
     const [classes, setClasses] = useState([]);
@@ -53,6 +54,91 @@ const TeacherDashboard = ({ userProfile, onClose }) => {
             loadClasses();
         }
     }, [userProfile]);
+
+    const handleRemoveStudent = async (student) => {
+        if (!selectedClass) return;
+
+        const confirmDelete = window.confirm(`⚠️ 確定要將「${student.displayName || '此學生'}」從班級中移除嗎？\n這將會清除該學生的班級綁定資料。`);
+
+        if (confirmDelete) {
+            setIsLoading(true);
+            try {
+                const success = await removeStudentFromClass(student.uid, selectedClass.id);
+                if (success) {
+                    alert('已成功將學生移除。');
+                    // Refresh student list
+                    await loadStudents(selectedClass.id);
+                } else {
+                    alert('移除失敗，請稍後再試。');
+                }
+            } catch (error) {
+                console.error("Error removing student:", error);
+                alert('移除發生錯誤。');
+            } finally {
+                setIsLoading(false);
+            }
+        }
+    };
+
+    const handleResetStats = async (student) => {
+        const confirmReset = window.confirm(`⚠️ 確定要重置「${student.displayName || '此學生'}」的所有遊戲紀錄嗎？\n這將會清除其所有模式的秒數、連擊與完成數，並將其從全球排行榜中移除。\n(此操作無法復原)`);
+
+        if (confirmReset) {
+            setIsLoading(true);
+            try {
+                const success = await resetUserStats(student.uid);
+                if (success) {
+                    alert('遊戲紀錄已成功重置。');
+                    if (selectedClass) await loadStudents(selectedClass.id);
+                } else {
+                    alert('重置失敗，請稍後再試。');
+                }
+            } catch (error) {
+                console.error("Error resetting stats:", error);
+                alert('重置發生錯誤。');
+            } finally {
+                setIsLoading(false);
+            }
+        }
+    };
+
+    const handleResetSelfStats = async () => {
+        const confirmReset = window.confirm(`⚠️ 確定要重置「您自己」的所有遊戲紀錄嗎？\n這將會清除您在所有模式的秒數、連擊與完成數，並將您從全球排行榜中移除。\n(此操作無法復原)`);
+
+        if (confirmReset) {
+            setIsLoading(true);
+            try {
+                const success = await resetUserStats(userProfile.uid);
+                if (success) {
+                    alert('您的遊戲紀錄已成功重置。');
+                    // Update global state to reflect reset stats
+                    const setUserProfile = useGameStore.getState().setUserProfile;
+                    setUserProfile({
+                        ...userProfile,
+                        stats: {
+                            beginnerTime: 999,
+                            beginnerCombo: 0,
+                            normalTime: 999,
+                            normalCombo: 0,
+                            wordTime: 999,
+                            wordCombo: 0,
+                            endlessTime: 0,
+                            endlessCombo: 0,
+                            playCount: 0,
+                            totalPlayTime: 0
+                        }
+                    });
+                } else {
+                    alert('重置失敗，請稍後再試。');
+                }
+            } catch (error) {
+                console.error("Error resetting self stats:", error);
+                alert('重置發生錯誤。');
+            } finally {
+                setIsLoading(false);
+            }
+        }
+    };
 
     const loadClasses = async () => {
         setIsLoading(true);
@@ -152,6 +238,40 @@ const TeacherDashboard = ({ userProfile, onClose }) => {
                 <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
                     {/* Left Panel: Class List */}
                     <div className="w-full md:w-1/3 border-r border-emerald-500/30 bg-gray-900/30 flex flex-col overflow-hidden">
+                        {/* Teacher Profile Section */}
+                        <div className="p-4 border-b border-gray-800 bg-emerald-500/5">
+                            <div className="flex items-center gap-3 mb-3">
+                                {userProfile?.photoURL ? (
+                                    <img src={userProfile.photoURL} alt="Teacher" className="w-10 h-10 rounded-full border border-emerald-500/50" />
+                                ) : (
+                                    <div className="w-10 h-10 rounded-full bg-emerald-900/50 flex items-center justify-center border border-emerald-500/30">
+                                        <UserIcon className="w-6 h-6 text-emerald-400" />
+                                    </div>
+                                )}
+                                <div className="flex-1 overflow-hidden">
+                                    <div className="font-bold text-white truncate">{userProfile?.displayName || '導師'} (您)</div>
+                                    <div className="text-[10px] text-emerald-400/70 truncate uppercase tracking-tighter">系統管理員數據</div>
+                                </div>
+                                <button
+                                    onClick={handleResetSelfStats}
+                                    className="p-2 text-gray-500 hover:text-yellow-400 hover:bg-yellow-400/10 rounded-lg transition-all"
+                                    title="重置我的個人遊戲紀錄 (從排行榜移除自身數據)"
+                                >
+                                    <RotateCcw className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-[10px] font-['Orbitron']">
+                                <div className="bg-gray-800/50 p-1.5 rounded border border-gray-700">
+                                    <div className="text-gray-500 scale-90 origin-left">初學紀錄</div>
+                                    <div className="text-emerald-400 font-bold">{userProfile?.stats?.beginnerTime === 999 ? '--' : `${userProfile?.stats?.beginnerTime}s`}</div>
+                                </div>
+                                <div className="bg-gray-800/50 p-1.5 rounded border border-gray-700">
+                                    <div className="text-gray-500 scale-90 origin-left">一般紀錄</div>
+                                    <div className="text-indigo-400 font-bold">{userProfile?.stats?.normalTime === 999 ? '--' : `${userProfile?.stats?.normalTime}s`}</div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="p-4 border-b border-gray-800">
                             <form onSubmit={handleCreateClass} className="flex gap-2">
                                 <input
@@ -282,6 +402,26 @@ const TeacherDashboard = ({ userProfile, onClose }) => {
                                                                 {student.email}
                                                             </div>
                                                         </div>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleResetStats(student);
+                                                            }}
+                                                            className="p-2 text-gray-500 hover:text-yellow-400 hover:bg-yellow-400/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                                            title="重置此學生的遊戲紀錄 (從全球排行榜移除)"
+                                                        >
+                                                            <RotateCcw className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleRemoveStudent(student);
+                                                            }}
+                                                            className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                                            title="將此學生移出班級"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
                                                     </div>
 
                                                     <div className="space-y-2 text-sm font-['Orbitron']">

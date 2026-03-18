@@ -301,3 +301,56 @@ export const joinClassUser = async (uid, code) => {
         return { success: false, message: "加入失敗，發生錯誤" };
     }
 };
+// Remove a student from a class (Teacher action)
+export const removeStudentFromClass = async (studentUid, classId) => {
+    if (!studentUid || !classId) return false;
+    try {
+        const userRef = doc(db, USERS_COLLECTION, studentUid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            const joinedClasses = userSnap.data().joinedClasses || [];
+            // Remove specific classId from the array
+            const updatedClasses = joinedClasses.filter(id => id !== classId);
+
+            await updateDoc(userRef, {
+                joinedClasses: updatedClasses
+            });
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.error("Error removing student from class:", e);
+        return false;
+    }
+};
+
+// Reset a user's stats to initial state (Teacher action - Removes from Leaderboard)
+export const resetUserStats = async (uid) => {
+    if (!uid) return false;
+    try {
+        const userRef = doc(db, USERS_COLLECTION, uid);
+        await updateDoc(userRef, {
+            stats: {
+                beginnerTime: 999,
+                beginnerCombo: 0,
+                beginnerCompleted: 0,
+                normalTime: 999,
+                normalCombo: 0,
+                normalCompleted: 0,
+                wordTime: 999,
+                wordCombo: 0,
+                wordCompleted: 0,
+                endlessTime: 0,
+                endlessCombo: 0,
+                endlessCompleted: 0,
+                totalWords: 0,
+                totalGames: 0
+            },
+            lastSyncedAt: serverTimestamp()
+        } || {});
+        return true;
+    } catch (e) {
+        console.error("Error resetting user stats:", e);
+        return false;
+    }
+};
