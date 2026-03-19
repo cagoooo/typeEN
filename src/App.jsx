@@ -73,12 +73,10 @@ function App() {
     const startTeacherPress = () => {
         if (!userProfile || userProfile.role === 'teacher') return;
 
-        console.log("[Teacher LongPress] Started");
         setIsTeacherPressing(true);
 
         // Trigger after exactly 3000ms
         pressTimerRef.current = setTimeout(() => {
-            console.log("[Teacher LongPress] Triggered!");
             setIsTeacherPressing(false);
             triggerTeacherUpgrade();
         }, 3000);
@@ -86,7 +84,6 @@ function App() {
 
     const clearTeacherPress = () => {
         if (pressTimerRef.current) {
-            console.log("[Teacher LongPress] Cleared / Interrupted");
         }
         setIsTeacherPressing(false);
         if (pressTimerRef.current) {
@@ -126,6 +123,7 @@ function App() {
     const setUserProfile = useGameStore(state => state.setUserProfile);
     const equippedBgm = useGameStore(state => state.equippedBgm);
     const setEquippedBgm = useGameStore(state => state.setEquippedBgm);
+
 
     // Initial auth listener
     useEffect(() => {
@@ -425,7 +423,11 @@ function App() {
         if (currentUser && currentUser.uid) {
             // Push updated stats
             const stateNow = useGameStore.getState();
-            syncStatsToCloud(currentUser.uid, statsToSync);
+            const mergedStats = await syncStatsToCloud(currentUser.uid, statsToSync);
+            if (mergedStats) {
+                setBestStats(mergedStats);
+                localStorage.setItem('typeEN_stats', encryptData(mergedStats));
+            }
             // Log effort (play count and time)
             incrementUserEffort(currentUser.uid, result.time || 0);
 
@@ -448,7 +450,7 @@ function App() {
     }, [bestStats, setGameState]);
 
     return (
-        <div className="w-full h-screen bg-gray-950 flex flex-col items-center justify-center font-sans overflow-hidden">
+        <div className="w-full min-h-screen bg-gray-950 flex flex-col items-center font-sans overflow-x-hidden overflow-y-auto selection:bg-indigo-500/30">
             {/* CRT Overlay Effects */}
             <div className="crt-vignette"></div>
             <div className="crt-overlay"></div>
@@ -463,8 +465,8 @@ function App() {
 
             {/* Start Screen */}
             {gameState === 'START' && (
-                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gray-900/90 backdrop-blur-sm">
-                    <div className="relative text-center p-10 rounded-3xl border border-indigo-500/30 shadow-[0_0_50px_rgba(99,102,241,0.2)] bg-gray-950/80 z-10 w-11/12 max-w-4xl">
+                <div className="min-h-screen w-full z-10 flex flex-col items-center justify-start bg-gray-900/90 backdrop-blur-sm py-12 px-4 sm:px-6">
+                    <div className="relative text-center p-6 md:p-10 rounded-3xl border border-indigo-500/30 shadow-[0_0_50px_rgba(99,102,241,0.2)] bg-gray-950/80 z-10 w-full max-w-4xl">
                         <h1 className="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 mb-6 font-['Press_Start_2P'] drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] leading-tight">
                             NEON<br />TYPER
                         </h1>

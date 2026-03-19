@@ -99,7 +99,20 @@ export const syncStatsToCloud = async (uid, localStats) => {
     const userSnap = await getDoc(userRef);
 
     if (userSnap.exists()) {
-        const cloudStats = userSnap.data().stats || {};
+        const userData = userSnap.data();
+        const cloudStats = userData.stats || {};
+        const needsHardReset = userData.needsHardReset || false;
+
+        // If a hard reset was triggered by a teacher/admin, ignore local stats
+        if (needsHardReset) {
+            console.log("Hard reset detected for user", uid, ". Overwriting local stats with cloud defaults.");
+            // Reset the flag and return cloud stats (which are already reset)
+            await updateDoc(userRef, {
+                needsHardReset: false,
+                lastSyncedAt: serverTimestamp()
+            });
+            return cloudStats;
+        }
 
         // Merge logic: keep the best records
         const mergedStats = {
@@ -329,25 +342,30 @@ export const resetUserStats = async (uid) => {
     if (!uid) return false;
     try {
         const userRef = doc(db, USERS_COLLECTION, uid);
+        const defaultStats = {
+            beginnerTime: 999,
+            beginnerCombo: 0,
+            beginnerCompleted: 0,
+            normalTime: 999,
+            normalCombo: 0,
+            normalCompleted: 0,
+            wordTime: 999,
+            wordCombo: 0,
+            wordCompleted: 0,
+            endlessTime: 0,
+            endlessCombo: 0,
+            endlessCompleted: 0,
+            playCount: 0,
+            totalPlayTime: 0,
+            totalWords: 0,
+            totalGames: 0
+        };
+
         await updateDoc(userRef, {
-            stats: {
-                beginnerTime: 999,
-                beginnerCombo: 0,
-                beginnerCompleted: 0,
-                normalTime: 999,
-                normalCombo: 0,
-                normalCompleted: 0,
-                wordTime: 999,
-                wordCombo: 0,
-                wordCompleted: 0,
-                endlessTime: 0,
-                endlessCombo: 0,
-                endlessCompleted: 0,
-                totalWords: 0,
-                totalGames: 0
-            },
+            stats: defaultStats,
+            needsHardReset: true, // Flag to force client to overwrite local storage on next sync
             lastSyncedAt: serverTimestamp()
-        } || {});
+        });
         return true;
     } catch (e) {
         console.error("Error resetting user stats:", e);
