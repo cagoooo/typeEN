@@ -686,7 +686,9 @@ function App() {
 
             {/* Game Engine */}
             {gameState === 'PLAYING' && (
-                <GameArea onGameEnd={handleGameEnd} />
+                <div className="fixed inset-0 z-40 bg-gray-950">
+                    <GameArea onGameEnd={handleGameEnd} />
+                </div>
             )}
 
             {/* End Screen */}

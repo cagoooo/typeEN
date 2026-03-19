@@ -863,13 +863,14 @@ const GameArea = ({ onGameEnd }) => {
     }, []);
 
     return (
-        <div className="relative w-full h-full overflow-hidden">
+        <div className="relative w-full h-screen overflow-hidden bg-gray-950">
             {/* Gameplay Layer (Scalable & Shakeable) */}
             <div
                 className={`absolute inset-0 ${shake ? 'animate-shake' : ''}`}
                 style={{
                     transform: `scale(${1 + Math.min(combo * 0.005, 0.15)})`,
-                    transition: 'transform 0.3s ease-out'
+                    transition: 'transform 0.3s ease-out',
+                    zIndex: 10
                 }}
             >
                 <div className="absolute inset-0 z-0 opacity-30 perspective-1000 transition-colors duration-700">
@@ -883,7 +884,8 @@ const GameArea = ({ onGameEnd }) => {
 
                 <canvas
                     ref={canvasRef}
-                    className="absolute inset-0 z-20 w-full h-full touch-none"
+                    className="absolute inset-0 z-20 w-full h-full touch-none block"
+                    style={{ width: '100%', height: '100%' }}
                 />
             </div>
 
