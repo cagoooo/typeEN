@@ -4,6 +4,7 @@ import Leaderboard from './components/Leaderboard';
 import { useGameStore } from './store/gameStore';
 import { Trophy, LogIn, LogOut, User as UserIcon, Award, ShoppingCart, Share2, Users, Fingerprint, Music } from 'lucide-react';
 import { subscribeToAuth, loginWithGoogle, logout, getUserProfile, syncStatsToCloud, syncAchievementsToCloud, upgradeToTeacher, joinClassUser, ensureUserDocument, incrementUserEffort, syncEconomyToCloud } from './utils/userService';
+import { getUserRank } from './utils/leaderboardService';
 import DailyBonusModal from './components/DailyBonusModal';
 import DailyQuestsPanel from './components/DailyQuestsPanel';
 import AchievementToast from './components/AchievementToast';

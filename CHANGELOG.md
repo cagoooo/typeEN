@@ -1,4 +1,11 @@
-# 📝 更新日誌 (v1.1.7)
+# 📝 更新日誌 (v1.1.8)
+
+## [1.1.8] - 2026-03-21
+
+### 🐞 修正
+- **核心邏輯修復**
+    - 修正了遊戲結束時 `getUserRank is not defined` 的 ReferenceError。
+    - 確保 `App.jsx` 正確匯入 `leaderboardService` 中的排名計算函式。
 
 ## [1.1.7] - 2026-03-21
 
