@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import GameArea from './components/GameArea';
 import Leaderboard from './components/Leaderboard';
 import { useGameStore } from './store/gameStore';
-import { Trophy, LogIn, LogOut, User as UserIcon, Award, ShoppingCart, Share2, Users, Fingerprint, Music } from 'lucide-react';
+import { Trophy, LogIn, LogOut, User as UserIcon, Award, ShoppingCart, Share2, Users, Fingerprint, Music, CircleDollarSign } from 'lucide-react';
 import { subscribeToAuth, loginWithGoogle, logout, getUserProfile, syncStatsToCloud, syncAchievementsToCloud, upgradeToTeacher, joinClassUser, ensureUserDocument, incrementUserEffort, syncEconomyToCloud } from './utils/userService';
 import { getUserRank } from './utils/leaderboardService';
 import DailyBonusModal from './components/DailyBonusModal';
@@ -327,9 +327,28 @@ function App() {
         // Trigger achievements check
         const unlocked = state.checkAchievements();
 
-        // Fetch rank asynchronously
+        // Fetch rank asynchronously and compare
+        const modeKey = state.mode ? state.mode.toLowerCase() : 'normal';
+        const previousBestRank = bestStats[`${modeKey}Rank`] || 999;
         const rank = await getUserRank(state.mode, state.gameTime);
-        setGameResult(prev => ({ ...prev, currentRank: rank }));
+
+        let rankChange = 0;
+        let isNewBestRank = false;
+
+        if (rank) {
+            if (previousBestRank === 999 || rank < previousBestRank) {
+                rankChange = previousBestRank === 999 ? 0 : previousBestRank - rank;
+                isNewBestRank = true;
+                // Note: we will update statsToSync later in the mode-specific blocks
+            }
+        }
+
+        setGameResult(prev => ({
+            ...prev,
+            currentRank: rank,
+            rankChange: rankChange,
+            isNewBestRank: isNewBestRank
+        }));
 
         // Save achievements to user profile if user is logged in
         if (unlocked.length > 0) {
@@ -358,6 +377,7 @@ function App() {
                 improved = true;
             }
             if (improved) {
+                if (isNewBestRank) statsToSync.beginnerRank = rank;
                 setBestStats(statsToSync);
                 localStorage.setItem('typeEN_stats', encryptData(statsToSync));
             }
@@ -377,6 +397,7 @@ function App() {
                 improved = true;
             }
             if (improved) {
+                if (isNewBestRank) statsToSync.normalRank = rank;
                 setBestStats(statsToSync);
                 localStorage.setItem('typeEN_stats', encryptData(statsToSync));
             }
@@ -397,6 +418,7 @@ function App() {
                 improved = true;
             }
             if (improved) {
+                if (isNewBestRank) statsToSync.endlessRank = rank;
                 setBestStats(statsToSync);
                 localStorage.setItem('typeEN_stats', encryptData(statsToSync));
             }
@@ -416,6 +438,7 @@ function App() {
                 improved = true;
             }
             if (improved) {
+                if (isNewBestRank) statsToSync.wordRank = rank;
                 setBestStats(statsToSync);
                 localStorage.setItem('typeEN_stats', encryptData(statsToSync));
             }
@@ -736,16 +759,31 @@ function App() {
                                 </div>
 
                                 {gameResult.earnedCoins > 0 && (
-                                    <div className="flex justify-between items-center border-b border-fuchsia-500/30 pb-2 animate-bounce">
-                                        <span className="text-yellow-400">金幣獎勵:</span>
-                                        <span className="text-yellow-400 font-bold">🪙 +{gameResult.earnedCoins}</span>
+                                    <div className="flex justify-between items-center py-4 px-6 bg-yellow-400/10 border-2 border-yellow-400/50 rounded-2xl animate-pulse shadow-[0_0_20px_rgba(250,204,21,0.2)]">
+                                        <span className="text-yellow-400 font-bold text-2xl flex items-center gap-2">
+                                            <CircleDollarSign className="w-8 h-8 text-yellow-400" />
+                                            獎勵金幣:
+                                        </span>
+                                        <span className="text-yellow-400 font-black text-4xl drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]">
+                                            +{gameResult.earnedCoins}
+                                        </span>
                                     </div>
                                 )}
 
                                 {gameResult.currentRank && (
-                                    <div className="flex justify-between items-center text-sm pt-2">
-                                        <span className="text-emerald-400">目前排行:</span>
-                                        <span className="text-emerald-400 font-bold">第 {gameResult.currentRank} 名</span>
+                                    <div className="flex flex-col gap-2 pt-4 border-t border-gray-700/50 mt-4">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-emerald-400 font-bold text-lg">目前排行:</span>
+                                            <span className="text-emerald-400 font-bold text-2xl">第 {gameResult.currentRank} 名</span>
+                                        </div>
+                                        {gameResult.isNewBestRank && (
+                                            <div className="flex justify-center items-center gap-2 py-2 px-4 bg-emerald-500/20 border border-emerald-500/50 rounded-full animate-bounce mt-2">
+                                                <Trophy className="w-5 h-5 text-yellow-400" />
+                                                <span className="text-emerald-300 font-black text-lg">
+                                                    {gameResult.rankChange > 0 ? `排名上升了 ${gameResult.rankChange} 名！` : '創下新紀錄！'}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

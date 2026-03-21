@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { CheckCircle2, Circle, Coins, Zap, Target, MousePointer2 } from 'lucide-react';
 
 const DailyQuestsPanel = () => {
     const { dailyQuests, claimQuestReward } = useGameStore();
+    const [rewardEffects, setRewardEffects] = useState([]);
 
     if (!dailyQuests.tasks || dailyQuests.tasks.length === 0) return null;
 
@@ -14,6 +15,15 @@ const DailyQuestsPanel = () => {
             case 'MAX_COMBO': return <MousePointer2 size={16} className="text-purple-400" />;
             default: return <CheckCircle2 size={16} />;
         }
+    };
+
+    const handleClaim = (taskId, reward) => {
+        claimQuestReward(taskId);
+        const effectId = Date.now();
+        setRewardEffects(prev => [...prev, { id: effectId, taskId, reward }]);
+        setTimeout(() => {
+            setRewardEffects(prev => prev.filter(e => e.id !== effectId));
+        }, 1000);
     };
 
     return (
@@ -29,9 +39,19 @@ const DailyQuestsPanel = () => {
                 {dailyQuests.tasks.map((task) => {
                     const isComplete = task.current >= task.target;
                     const progress = Math.min(100, (task.current / task.target) * 100);
+                    const taskEffects = rewardEffects.filter(e => e.taskId === task.id);
 
                     return (
                         <div key={task.id} className={`group relative bg-gray-800/40 border rounded-2xl p-3 transition-all ${isComplete && !task.claimed ? 'border-yellow-500/50 bg-yellow-500/5' : 'border-gray-700/50'}`}>
+
+                            {/* Floating Coin Effects */}
+                            {taskEffects.map(effect => (
+                                <div key={effect.id} className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+                                    <div className="flex items-center gap-2 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full font-black text-sm animate-coin-pop shadow-lg">
+                                        <Coins size={14} /> +{effect.reward}
+                                    </div>
+                                </div>
+                            ))}
 
                             <div className="flex items-start gap-3 mb-2">
                                 <div className={`mt-1 p-1.5 rounded-lg ${isComplete ? 'bg-green-500/20 text-green-400' : 'bg-gray-700/50 text-gray-400'}`}>
@@ -71,7 +91,7 @@ const DailyQuestsPanel = () => {
                             {/* Claim Button Overlay for un-claimed completed tasks */}
                             {isComplete && !task.claimed && (
                                 <button
-                                    onClick={() => claimQuestReward(task.id)}
+                                    onClick={() => handleClaim(task.id, task.reward)}
                                     className="absolute inset-0 w-full h-full bg-yellow-500/10 hover:bg-yellow-500/20 backdrop-blur-[1px] rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-yellow-500/50 cursor-pointer"
                                 >
                                     <span className="bg-yellow-500 text-gray-900 text-[10px] font-black px-3 py-1 rounded-full shadow-lg transform group-hover:scale-110 transition-transform">

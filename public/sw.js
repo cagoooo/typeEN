@@ -1,6 +1,6 @@
 // ⚠️ 版本號每次部署自動由 inject.py 或手動更新
 // 改用 Network First 策略：確保每次都能取得最新 JS/CSS
-const CACHE_VERSION = 'typeen-neon-v1.1.7';
+const CACHE_VERSION = 'typeen-neon-v1.1.9';
 const CACHE_NAME = CACHE_VERSION;
 
 // 靜態資產（字體、圖示等）才快取

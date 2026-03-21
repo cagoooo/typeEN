@@ -5,16 +5,29 @@ import { Trophy, Coins, Calendar, X, CheckCircle2 } from 'lucide-react';
 const DailyBonusModal = () => {
     const { showDailyBonus, setShowDailyBonus, lastDailyBonusAmount, streak } = useGameStore();
     const [isVisible, setIsVisible] = useState(false);
+    const [isClaiming, setIsClaiming] = useState(false);
 
     useEffect(() => {
         if (showDailyBonus) {
             setIsVisible(true);
+            setIsClaiming(false);
         }
     }, [showDailyBonus]);
 
     const handleClose = () => {
         setIsVisible(false);
-        setTimeout(() => setShowDailyBonus(false), 300);
+        setTimeout(() => {
+            setShowDailyBonus(false);
+            setIsClaiming(false);
+        }, 300);
+    };
+
+    const handleClaim = () => {
+        setIsClaiming(true);
+        // Let the animation play before closing
+        setTimeout(() => {
+            handleClose();
+        }, 800);
     };
 
     if (!showDailyBonus && !isVisible) return null;
@@ -29,6 +42,15 @@ const DailyBonusModal = () => {
 
             {/* Modal Content */}
             <div className={`relative w-full max-w-sm bg-gray-900 border border-yellow-500/30 rounded-3xl p-8 flex flex-col items-center shadow-[0_0_50px_rgba(234,179,8,0.2)] transform transition-all duration-500 ${isVisible ? 'scale-100 translate-y-0' : 'scale-90 translate-y-10'}`}>
+
+                {/* Floating Coin Animation */}
+                {isClaiming && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[110]">
+                        <div className="flex items-center gap-2 bg-yellow-400 text-gray-900 px-6 py-2 rounded-full font-black text-2xl animate-coin-pop shadow-[0_0_30px_rgba(250,204,21,0.5)]">
+                            <Coins size={28} /> +{lastDailyBonusAmount}
+                        </div>
+                    </div>
+                )}
 
                 {/* Close Button */}
                 <button
@@ -49,7 +71,7 @@ const DailyBonusModal = () => {
                 </p>
 
                 {/* Reward Display */}
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl px-6 py-4 flex items-center gap-4 mb-8">
+                <div className={`bg-yellow-500/10 border border-yellow-500/30 rounded-2xl px-6 py-4 flex items-center gap-4 mb-8 transition-all ${isClaiming ? 'scale-110 opacity-50 blur-sm' : ''}`}>
                     <div className="bg-yellow-500 rounded-full p-2">
                         <Coins className="text-gray-900 w-6 h-6" />
                     </div>
@@ -72,10 +94,11 @@ const DailyBonusModal = () => {
                 </div>
 
                 <button
-                    onClick={handleClose}
-                    className="mt-8 w-full py-4 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-gray-900 font-black rounded-2xl transition-all active:scale-95 shadow-[0_4px_15px_rgba(234,179,8,0.3)]"
+                    onClick={handleClaim}
+                    disabled={isClaiming}
+                    className={`mt-8 w-full py-4 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-gray-900 font-black rounded-2xl transition-all active:scale-95 shadow-[0_4px_15px_rgba(234,179,8,0.3)] ${isClaiming ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                    領取並開始練習
+                    {isClaiming ? '領取中...' : '領取並開始練習'}
                 </button>
             </div>
         </div>

@@ -28,9 +28,11 @@ const HandsHint = ({ activeLetters = [] }) => {
         <div className="fixed bottom-3 md:bottom-5 left-1/2 -translate-x-1/2 pointer-events-none w-[90%] max-w-[420px] aspect-[420/180] z-10 transition-transform duration-300">
             {/* 方向文字提示組件 */}
             {targetRow && (
-                <div className="absolute top-[-30px] left-1/2 -translate-x-1/2 bg-indigo-900/80 border border-indigo-400 px-3 py-1 rounded-full text-white text-xs font-bold font-mono tracking-widest shadow-[0_0_15px_rgba(99,102,241,0.5)] flex items-center gap-2 animate-bounce">
-                    <span className="text-lime-400">{getDirectionIcon()}</span>
-                    <span>{targetRow === 'top' ? '上移' : targetRow === 'bottom' ? '下移' : '中排'}</span>
+                <div className="absolute top-[-60px] left-1/2 -translate-x-1/2 bg-indigo-950/95 border-2 border-indigo-300 px-5 py-2 rounded-2xl text-white text-2xl font-black font-sans tracking-widest shadow-[0_0_25px_rgba(99,102,241,0.8)] flex items-center gap-3 animate-bounce z-20 scale-110">
+                    <span className="text-lime-400 drop-shadow-[0_0_8px_rgba(163,230,53,0.8)]">{getDirectionIcon()}</span>
+                    <span className="drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+                        {targetRow === 'top' ? '上移' : targetRow === 'bottom' ? '下移' : '中排'}
+                    </span>
                 </div>
             )}
 
