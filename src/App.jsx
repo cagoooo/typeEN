@@ -119,6 +119,16 @@ function App() {
         wordTime: 999, wordCombo: 0
     });
 
+    const handleStatsReset = () => {
+        localStorage.removeItem('typeEN_stats');
+        setBestStats({
+            beginnerTime: 999, beginnerCombo: 0,
+            normalTime: 999, normalCombo: 0,
+            endlessTime: 0, endlessCombo: 0,
+            wordTime: 999, wordCombo: 0
+        });
+    };
+
     const userProfile = useGameStore(state => state.userProfile);
     const setUserProfile = useGameStore(state => state.setUserProfile);
     const equippedBgm = useGameStore(state => state.equippedBgm);
@@ -782,6 +792,12 @@ function App() {
                                         再玩一次
                                     </button>
                                     <button
+                                        onClick={() => setShowLeaderboard(true)}
+                                        className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-full text-xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] active:scale-95 tracking-wider"
+                                    >
+                                        全球排行榜
+                                    </button>
+                                    <button
                                         onClick={() => setGameState('START')}
                                         className="px-8 py-4 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-full text-xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(156,163,175,0.6)] active:scale-95 tracking-wider"
                                     >
@@ -823,6 +839,7 @@ function App() {
                 <TeacherDashboard
                     userProfile={userProfile}
                     onClose={() => setShowTeacherDashboard(false)}
+                    onStatsReset={handleStatsReset}
                 />
             )}
 

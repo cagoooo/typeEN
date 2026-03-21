@@ -4,7 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { getTeacherClasses, createClass, getClassStudents, removeStudentFromClass, resetUserStats } from '../utils/userService';
 import { useGameStore } from '../store/gameStore';
 
-const TeacherDashboard = ({ userProfile, onClose }) => {
+const TeacherDashboard = ({ userProfile, onClose, onStatsReset }) => {
     const [classes, setClasses] = useState([]);
     const [selectedClass, setSelectedClass] = useState(null);
     const [students, setStudents] = useState([]);
@@ -186,7 +186,10 @@ const TeacherDashboard = ({ userProfile, onClose }) => {
                             show: true,
                             title: '重置成功',
                             message: '您的遊戲紀錄已成功重置。',
-                            onConfirm: closeConfirmModal,
+                            onConfirm: () => {
+                                closeConfirmModal();
+                                if (onStatsReset) onStatsReset();
+                            },
                             type: 'info'
                         });
                     } else {
@@ -212,23 +215,28 @@ const TeacherDashboard = ({ userProfile, onClose }) => {
         setIsLoading(false);
     };
 
-
-
+    // Load student list when selected class changes
     useEffect(() => {
-        if (userProfile?.uid && !selectedClass) {
-            const loadInitialData = async () => {
+        if (selectedClass?.id) {
+            loadStudents(selectedClass.id);
+        }
+    }, [selectedClass?.id]);
+
+    // Initial load of classes
+    useEffect(() => {
+        if (userProfile?.uid && classes.length === 0) {
+            const fetchClasses = async () => {
                 setIsLoading(true);
                 const userClasses = await getTeacherClasses(userProfile.uid);
                 setClasses(userClasses);
-                if (userClasses.length > 0) {
+                if (userClasses.length > 0 && !selectedClass) {
                     setSelectedClass(userClasses[0]);
-                    await loadStudents(userClasses[0].id);
                 }
                 setIsLoading(false);
             };
-            loadInitialData();
+            fetchClasses();
         }
-    }, [userProfile, selectedClass]);
+    }, [userProfile, classes.length, selectedClass]);
 
     const loadStudents = async (classId) => {
         setIsLoading(true);
