@@ -44,6 +44,14 @@ jobs:
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_TEACHER_SECRET: ${{ secrets.VITE_TEACHER_SECRET }}
         
+      - name: Deploy Firestore Rules 🚀
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only firestore:rules,firestore:indexes
+        env:
+          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOKA_3CE9A }}
+          PROJECT_ID: soka-3ce9a
+        
       - name: Setup Pages
         uses: actions/configure-pages@v4
         

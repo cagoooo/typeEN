@@ -54,8 +54,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // 只處理 http/https 請求，略過 chrome-extension:// 等不支援 Cache API 的協議
-    if (!url.protocol.startsWith('http')) return;
+    // 優先過濾掉不支援的協議 (如 chrome-extension://, edge-extension://, about:, data: 等)
+    // 這是解決 Failed to execute 'put' on 'Cache' 的關鍵
+    if (!url.protocol.startsWith('http')) {
+        return;
+    }
 
     // 略過 Vite 開發工具、Firebase API、非 GET 請求
     if (
