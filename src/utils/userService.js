@@ -57,9 +57,19 @@ export const ensureUserDocument = async (user) => {
             lastLogin: serverTimestamp(),
             stats: {
                 beginnerTime: 999,
+                beginnerCombo: 0,
+                beginnerCompleted: 0,
                 normalTime: 999,
+                normalCombo: 0,
+                normalCompleted: 0,
                 endlessTime: 0,
-                wordTime: 999
+                endlessCombo: 0,
+                endlessCompleted: 0,
+                wordTime: 999,
+                wordCombo: 0,
+                wordCompleted: 0,
+                playCount: 0,
+                totalPlayTime: 0
             },
             streak: { count: 0, lastDate: null },
             dailyQuests: { date: null, tasks: [] },

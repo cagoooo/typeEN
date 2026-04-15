@@ -4,7 +4,7 @@ import Leaderboard from './components/Leaderboard';
 import { useGameStore } from './store/gameStore';
 import { Trophy, LogIn, LogOut, User as UserIcon, Award, ShoppingCart, Share2, Users, Fingerprint, Music, CircleDollarSign } from 'lucide-react';
 import { subscribeToAuth, loginWithGoogle, logout, getUserProfile, syncStatsToCloud, syncAchievementsToCloud, upgradeToTeacher, joinClassUser, ensureUserDocument, incrementUserEffort, syncEconomyToCloud } from './utils/userService';
-import { getUserRank } from './utils/leaderboardService';
+import { getUserRank, invalidateLeaderboardCache } from './utils/leaderboardService';
 import DailyBonusModal from './components/DailyBonusModal';
 import DailyQuestsPanel from './components/DailyQuestsPanel';
 import AchievementToast from './components/AchievementToast';
@@ -360,14 +360,15 @@ function App() {
 
         let statsToSync = { ...bestStats };
 
-        if (state.mode === 'BEGINNER' && result.isWin) {
+        if (state.mode === 'BEGINNER') {
             let improved = false;
-            // Beginner logic: we want lowest time and highest combo, just like normal
-            if (result.time < (bestStats.beginnerTime || 999)) {
+            // Time only updates when the player actually clears (isWin)
+            if (result.isWin && result.time < (bestStats.beginnerTime || 999)) {
                 statsToSync.beginnerTime = result.time;
-                statsToSync.beginnerCompleted = result.completed;
                 improved = true;
             }
+            // Combo / completed count should be persisted even on a failed run so the
+            // leaderboard can reflect progress for players who haven't fully cleared yet.
             if (result.maxCombo > (bestStats.beginnerCombo || 0)) {
                 statsToSync.beginnerCombo = result.maxCombo;
                 improved = true;
@@ -377,15 +378,14 @@ function App() {
                 improved = true;
             }
             if (improved) {
-                if (isNewBestRank) statsToSync.beginnerRank = rank;
+                if (isNewBestRank && result.isWin) statsToSync.beginnerRank = rank;
                 setBestStats(statsToSync);
                 localStorage.setItem('typeEN_stats', encryptData(statsToSync));
             }
-        } else if (state.mode === 'NORMAL' && result.isWin) {
+        } else if (state.mode === 'NORMAL') {
             let improved = false;
-            if (result.time < bestStats.normalTime) {
+            if (result.isWin && result.time < bestStats.normalTime) {
                 statsToSync.normalTime = result.time;
-                statsToSync.normalCompleted = result.completed;
                 improved = true;
             }
             if (result.maxCombo > bestStats.normalCombo) {
@@ -397,7 +397,7 @@ function App() {
                 improved = true;
             }
             if (improved) {
-                if (isNewBestRank) statsToSync.normalRank = rank;
+                if (isNewBestRank && result.isWin) statsToSync.normalRank = rank;
                 setBestStats(statsToSync);
                 localStorage.setItem('typeEN_stats', encryptData(statsToSync));
             }
@@ -422,11 +422,10 @@ function App() {
                 setBestStats(statsToSync);
                 localStorage.setItem('typeEN_stats', encryptData(statsToSync));
             }
-        } else if (state.mode === 'WORD' && result.isWin) {
+        } else if (state.mode === 'WORD') {
             let improved = false;
-            if (result.time < (bestStats.wordTime || 999)) {
+            if (result.isWin && result.time < (bestStats.wordTime || 999)) {
                 statsToSync.wordTime = result.time;
-                statsToSync.wordCompleted = result.completed;
                 improved = true;
             }
             if (result.maxCombo > (bestStats.wordCombo || 0)) {
@@ -438,7 +437,7 @@ function App() {
                 improved = true;
             }
             if (improved) {
-                if (isNewBestRank) statsToSync.wordRank = rank;
+                if (isNewBestRank && result.isWin) statsToSync.wordRank = rank;
                 setBestStats(statsToSync);
                 localStorage.setItem('typeEN_stats', encryptData(statsToSync));
             }
@@ -462,6 +461,9 @@ function App() {
                 setBestStats(mergedStats);
                 localStorage.setItem('typeEN_stats', encryptData(mergedStats));
             }
+            // The leaderboard might now be stale for this player's tab — drop the
+            // cached copy so the next open pulls fresh data.
+            invalidateLeaderboardCache(state.mode);
             // Log effort (play count and time)
             incrementUserEffort(currentUser.uid, result.time || 0);
 
@@ -860,7 +862,13 @@ function App() {
 
             {/* Leaderboard Modal */}
             {showLeaderboard && (
-                <Leaderboard onClose={() => setShowLeaderboard(false)} />
+                <Leaderboard
+                    onClose={() => setShowLeaderboard(false)}
+                    onStartMode={(mode) => {
+                        setShowLeaderboard(false);
+                        startGame(mode);
+                    }}
+                />
             )}
 
             {/* Achievements Modal */}

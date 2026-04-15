@@ -1,48 +1,53 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { getLeaderboard } from '../utils/leaderboardService';
 import { APPEARANCE_ITEMS } from '../utils/constants';
-import { Trophy, Clock, Target, Flame, X, Loader } from 'lucide-react';
+import { useGameStore } from '../store/gameStore';
+import { Trophy, Clock, Target, Flame, X, Loader, MapPin, Play } from 'lucide-react';
 
-const Leaderboard = ({ onClose }) => {
+const Leaderboard = ({ onClose, onStartMode }) => {
     const [currentMode, setCurrentMode] = useState('BEGINNER');
     const [loading, setLoading] = useState(true);
     const [scores, setScores] = useState([]);
+    const [isMeVisible, setIsMeVisible] = useState(true);
+
+    const userProfile = useGameStore(state => state.userProfile);
+    const currentUid = userProfile?.uid;
+
+    const listContainerRef = useRef(null);
+    const selfRowRef = useRef(null);
 
     const MODES = [
-        { id: 'BEGINNER', label: '初學者', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/50' },
-        { id: 'NORMAL', label: '一般模式', color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/50' },
-        { id: 'ENDLESS', label: '無盡生存', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/50' },
-        { id: 'WORD', label: '單字挑戰', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/50' }
+        { id: 'BEGINNER', label: '初學者', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/50', cta: 'bg-emerald-600 hover:bg-emerald-500' },
+        { id: 'NORMAL', label: '一般模式', color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/50', cta: 'bg-indigo-600 hover:bg-indigo-500' },
+        { id: 'ENDLESS', label: '無盡生存', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/50', cta: 'bg-purple-600 hover:bg-purple-500' },
+        { id: 'WORD', label: '單字挑戰', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/50', cta: 'bg-yellow-600 hover:bg-yellow-500' }
     ];
+
+    const currentModeConfig = MODES.find(m => m.id === currentMode) || MODES[0];
+
+    // Locate self in the leaderboard
+    const selfIndex = currentUid ? scores.findIndex(s => s.id === currentUid) : -1;
+    const hasSelf = selfIndex !== -1;
+
+    // Scroll-to-me helper
+    const scrollToSelf = useCallback((smooth = true) => {
+        if (selfRowRef.current) {
+            selfRowRef.current.scrollIntoView({
+                behavior: smooth ? 'smooth' : 'auto',
+                block: 'center'
+            });
+        }
+    }, []);
 
     useEffect(() => {
         const fetchScores = async () => {
             setLoading(true);
             try {
-                // The service sorts appropriately based on mode
-                // For ENDLESS: sorted by endlessTime DESC
-                // For others: sorted by {mode}Time ASC
+                // The service already filters + sorts per mode:
+                //   - Cleared runs first (time ASC), then in-progress runs (completed DESC).
+                //   - Endless mode is sorted by survival time DESC.
                 const data = await getLeaderboard(currentMode, 100);
-
-                // Filter the documents to only include those that actually belong to this mode
-                // e.g., A player might have submitted endlessTime, but their normalTime document isn't here
-                const filteredData = data.filter(s => {
-                    if (currentMode === 'ENDLESS') return s.endlessTime !== undefined;
-                    if (currentMode === 'NORMAL') return s.normalTime !== undefined;
-                    if (currentMode === 'WORD') return s.wordTime !== undefined;
-                    if (currentMode === 'BEGINNER') return s.beginnerTime !== undefined;
-                    return false;
-                });
-
-                // Sort client-side again just to be safe if firestore returns mixed or missing indices
-                if (currentMode === 'ENDLESS') {
-                    filteredData.sort((a, b) => b.endlessTime - a.endlessTime);
-                } else {
-                    const field = currentMode === 'BEGINNER' ? 'beginnerTime' : currentMode === 'NORMAL' ? 'normalTime' : 'wordTime';
-                    filteredData.sort((a, b) => a[field] - b[field]);
-                }
-
-                setScores(filteredData);
+                setScores(data);
             } catch (error) {
                 console.error("Fetch errors:", error);
             } finally {
@@ -52,6 +57,42 @@ const Leaderboard = ({ onClose }) => {
 
         fetchScores();
     }, [currentMode]);
+
+    // Auto scroll-to-me once after scores are rendered (slight delay to ensure layout settled)
+    useEffect(() => {
+        if (!loading && hasSelf && selfRowRef.current) {
+            const t = setTimeout(() => scrollToSelf(true), 300);
+            return () => clearTimeout(t);
+        }
+    }, [loading, hasSelf, currentMode, scrollToSelf]);
+
+    // Track whether "me" row is currently visible inside the list viewport
+    useEffect(() => {
+        if (!hasSelf || !selfRowRef.current || !listContainerRef.current) {
+            setIsMeVisible(true);
+            return;
+        }
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const entry = entries[0];
+                if (entry) setIsMeVisible(entry.isIntersecting);
+            },
+            {
+                root: listContainerRef.current,
+                threshold: 0.5
+            }
+        );
+        observer.observe(selfRowRef.current);
+        return () => observer.disconnect();
+    }, [hasSelf, scores, currentMode]);
+
+    const handleStartMode = () => {
+        if (onStartMode) {
+            onStartMode(currentMode);
+        } else {
+            onClose();
+        }
+    };
 
     return (
         <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-gray-950/95 backdrop-blur-md p-4 md:p-10">
@@ -90,16 +131,30 @@ const Leaderboard = ({ onClose }) => {
                 </div>
 
                 {/* List Content */}
-                <div className="flex-1 overflow-y-auto p-2 sm:p-6 custom-scrollbar">
+                <div ref={listContainerRef} className="flex-1 overflow-y-auto p-2 sm:p-6 custom-scrollbar relative">
                     {loading ? (
                         <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-indigo-400">
                             <Loader className="w-12 h-12 animate-spin" />
                             <p className="font-['Orbitron'] tracking-widest animate-pulse">連線最高殿堂中...</p>
                         </div>
                     ) : scores.length === 0 ? (
-                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 space-y-4">
-                            <Trophy className="w-16 h-16 opacity-20" />
-                            <p className="text-xl">目前尚無紀錄，快來成為榜首吧！</p>
+                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 space-y-5 px-6 text-center">
+                            <Trophy className="w-20 h-20 text-gray-700" />
+                            <div className="space-y-2">
+                                <p className="text-2xl font-bold text-white">
+                                    還沒有人征服「{currentModeConfig.label}」！
+                                </p>
+                                <p className="text-gray-500 max-w-md">
+                                    全校還沒有特工在這個模式留下紀錄，成為第一個霸榜的學生吧 ⚡
+                                </p>
+                            </div>
+                            <button
+                                onClick={handleStartMode}
+                                className={`group flex items-center gap-3 px-8 py-4 ${currentModeConfig.cta} text-white font-bold rounded-full text-xl transition-all duration-300 hover:scale-105 shadow-[0_0_30px_rgba(99,102,241,0.4)] active:scale-95`}
+                            >
+                                <Play className="w-6 h-6 group-hover:translate-x-0.5 transition-transform" />
+                                立即挑戰「{currentModeConfig.label}」
+                            </button>
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -120,20 +175,30 @@ const Leaderboard = ({ onClose }) => {
                                 const timeValue = currentMode === 'ENDLESS' ? score.endlessTime : currentMode === 'NORMAL' ? score.normalTime : currentMode === 'WORD' ? score.wordTime : score.beginnerTime;
                                 const comboValue = currentMode === 'ENDLESS' ? score.endlessCombo : currentMode === 'NORMAL' ? score.normalCombo : currentMode === 'WORD' ? score.wordCombo : score.beginnerCombo;
                                 const completedValue = currentMode === 'ENDLESS' ? score.endlessCompleted : currentMode === 'NORMAL' ? score.normalCompleted : currentMode === 'WORD' ? score.wordCompleted : score.beginnerCompleted;
+                                // Time-mode players who haven't fully cleared yet (time === 999 / undefined) are in-progress rows
+                                const isCleared = currentMode === 'ENDLESS'
+                                    ? (timeValue !== undefined && timeValue > 0)
+                                    : (timeValue !== undefined && timeValue > 0 && timeValue < 999);
+                                const isMe = currentUid && score.id === currentUid;
 
                                 return (
                                     <div
                                         key={score.id || index}
-                                        className={`group grid grid-cols-12 gap-4 items-center px-6 py-4 rounded-xl transition-all duration-300 hover:scale-[1.01] hover:bg-white/5 border border-transparent hover:border-white/10 ${index === 0 ? 'bg-gradient-to-r from-yellow-500/20 to-transparent border-yellow-500/30' :
-                                            index === 1 ? 'bg-gradient-to-r from-gray-300/10 to-transparent border-gray-300/20' :
-                                                index === 2 ? 'bg-gradient-to-r from-orange-700/20 to-transparent border-orange-700/30' :
-                                                    'bg-gray-800/40'
+                                        ref={isMe ? selfRowRef : null}
+                                        className={`group grid grid-cols-12 gap-4 items-center px-6 py-4 rounded-xl transition-all duration-300 hover:scale-[1.01] hover:bg-white/5 border border-transparent hover:border-white/10 ${isMe ? 'ring-2 ring-indigo-400 ring-offset-2 ring-offset-gray-900 animate-pulse-slow bg-indigo-500/15 border-indigo-400/50' :
+                                            !isCleared ? 'bg-gray-800/20 opacity-80' :
+                                                index === 0 ? 'bg-gradient-to-r from-yellow-500/20 to-transparent border-yellow-500/30' :
+                                                    index === 1 ? 'bg-gradient-to-r from-gray-300/10 to-transparent border-gray-300/20' :
+                                                        index === 2 ? 'bg-gradient-to-r from-orange-700/20 to-transparent border-orange-700/30' :
+                                                            'bg-gray-800/40'
                                             }`}
                                     >
-                                        <div className={`col-span-2 sm:col-span-1 text-center font-['Press_Start_2P'] text-xl ${index === 0 ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]' :
-                                            index === 1 ? 'text-gray-300' :
-                                                index === 2 ? 'text-orange-400' :
-                                                    'text-gray-600'
+                                        <div className={`col-span-2 sm:col-span-1 text-center font-['Press_Start_2P'] text-xl ${isMe ? 'text-indigo-300 drop-shadow-[0_0_8px_rgba(129,140,248,0.8)]' :
+                                            !isCleared ? 'text-gray-500' :
+                                                index === 0 ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]' :
+                                                    index === 1 ? 'text-gray-300' :
+                                                        index === 2 ? 'text-orange-400' :
+                                                            'text-gray-600'
                                             }`}>
                                             #{index + 1}
                                         </div>
@@ -157,14 +222,15 @@ const Leaderboard = ({ onClose }) => {
                                                         《{score.appearance.title}》
                                                     </span>
                                                 )}
-                                                <span className="text-white text-lg md:text-xl truncate group-hover:text-indigo-300">
+                                                <span className={`text-lg md:text-xl truncate group-hover:text-indigo-300 ${isMe ? 'text-indigo-200' : 'text-white'}`}>
                                                     {score.playerName}
+                                                    {isMe && <span className="ml-2 text-xs text-indigo-300 font-['Press_Start_2P'] tracking-wider">YOU</span>}
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="col-span-5 sm:col-span-6 grid grid-cols-2 md:grid-cols-3 gap-2 text-right md:text-center font-['Orbitron']">
-                                            <div className={`col-span-1 font-bold ${modeColor}`}>
-                                                {timeValue}s
+                                            <div className={`col-span-1 font-bold ${isCleared ? modeColor : 'text-gray-500'}`} title={!isCleared ? '尚未通關' : ''}>
+                                                {isCleared ? `${timeValue}s` : '未通關'}
                                             </div>
                                             <div className="col-span-1 text-orange-400">
                                                 {comboValue !== undefined ? comboValue : '--'}
@@ -178,6 +244,17 @@ const Leaderboard = ({ onClose }) => {
                             })}
                         </div>
                     )}
+
+                    {/* Floating "Scroll to Me" Button — only when self exists but is off-screen */}
+                    {!loading && hasSelf && !isMeVisible && (
+                        <button
+                            onClick={() => scrollToSelf(true)}
+                            className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-5 py-3 bg-indigo-500 hover:bg-indigo-400 text-white font-bold rounded-full shadow-[0_0_20px_rgba(99,102,241,0.6)] transition-all hover:scale-105 active:scale-95 z-20 animate-bounce-slow"
+                        >
+                            <MapPin className="w-5 h-5" />
+                            <span>你在第 {selfIndex + 1} 名</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -187,15 +264,29 @@ const Leaderboard = ({ onClose }) => {
                     width: 8px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-track {
-                    background: rgba(17, 24, 39, 0.5); 
+                    background: rgba(17, 24, 39, 0.5);
                     border-radius: 4px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(99, 102, 241, 0.3); 
+                    background: rgba(99, 102, 241, 0.3);
                     border-radius: 4px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(99, 102, 241, 0.6); 
+                    background: rgba(99, 102, 241, 0.6);
+                }
+                @keyframes pulse-slow {
+                    0%, 100% { box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.6); }
+                    50% { box-shadow: 0 0 18px 4px rgba(129, 140, 248, 0.9); }
+                }
+                .animate-pulse-slow {
+                    animation: pulse-slow 2.2s ease-in-out infinite;
+                }
+                @keyframes bounce-slow {
+                    0%, 100% { transform: translate(-50%, 0); }
+                    50% { transform: translate(-50%, -6px); }
+                }
+                .animate-bounce-slow {
+                    animation: bounce-slow 1.6s ease-in-out infinite;
                 }
             `}} />
         </div>
