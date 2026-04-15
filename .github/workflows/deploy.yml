@@ -44,22 +44,28 @@ jobs:
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_TEACHER_SECRET: ${{ secrets.VITE_TEACHER_SECRET }}
         
-      - name: Deploy Firestore Rules 🚀
-        uses: w9jds/firebase-action@master
-        with:
-          args: deploy --only firestore:rules,firestore:indexes
-        env:
-          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOKA_3CE9A }}
-          PROJECT_ID: soka-3ce9a
-        
       - name: Setup Pages
         uses: actions/configure-pages@v4
-        
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
-          
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      # Bonus step: deploy Firestore rules + indexes if the service-account secret is set.
+      # Runs AFTER Pages deploy + continue-on-error so a missing / invalid secret
+      # can never block the website from going live.
+      - name: Deploy Firestore Rules (optional) 🚀
+        if: ${{ env.FIREBASE_SA != '' }}
+        continue-on-error: true
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only firestore:rules,firestore:indexes
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOKA_3CE9A }}
+          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOKA_3CE9A }}
+          PROJECT_ID: soka-3ce9a
