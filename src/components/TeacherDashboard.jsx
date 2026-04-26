@@ -162,6 +162,9 @@ const TeacherDashboard = ({ userProfile, onClose, onStatsReset }) => {
                             beginnerTime: 999,
                             beginnerCombo: 0,
                             beginnerCompleted: 0,
+                            advancedTime: 999,
+                            advancedCombo: 0,
+                            advancedCompleted: 0,
                             normalTime: 999,
                             normalCombo: 0,
                             normalCompleted: 0,
@@ -272,12 +275,13 @@ const TeacherDashboard = ({ userProfile, onClose, onStatsReset }) => {
     const handleExportCSV = () => {
         if (!selectedClass || !students.length) return;
 
-        const headers = ['學生姓名', 'Email', '初管理者最佳(s)', '一般最佳(s)', '單字挑戰最佳(s)', '無盡生存(s)', '總遊玩次數', '總遊玩時長(s)', '成就數量'];
+        const headers = ['學生姓名', 'Email', '初學者最佳(s)', '進階最佳(s)', '一般最佳(s)', '單字挑戰最佳(s)', '無盡生存(s)', '總遊玩次數', '總遊玩時長(s)', '成就數量'];
 
         const rows = students.map(student => [
             `"${student.displayName || '未命名'}"`,
             `"${student.email || ''}"`,
             student.stats?.beginnerTime === 999 ? 'N/A' : (student.stats?.beginnerTime || 'N/A'),
+            student.stats?.advancedTime === 999 ? 'N/A' : (student.stats?.advancedTime || 'N/A'),
             student.stats?.normalTime === 999 ? 'N/A' : (student.stats?.normalTime || 'N/A'),
             student.stats?.wordTime === 999 ? 'N/A' : (student.stats?.wordTime || 'N/A'),
             student.stats?.endlessTime || 0,

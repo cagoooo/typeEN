@@ -24,6 +24,16 @@ export const rowMap = {
     'Z': 'bottom', 'X': 'bottom', 'C': 'bottom', 'V': 'bottom', 'B': 'bottom', 'N': 'bottom', 'M': 'bottom',
 };
 
+// Practice subsets used by ADVANCED mode for graduated learning.
+// `id` is what we persist in store; `letters` is the playable pool.
+export const PRACTICE_SUBSETS = [
+    { id: 'all', label: '全鍵盤 (26 字母)', letters: null, hint: '挑戰完整字母表，唯一可登上排行榜的選項' },
+    { id: 'home', label: '中排 ASDFGHJKL', letters: ['A','S','D','F','G','H','J','K','L'], hint: '從基準鍵入門，建立手指定位感' },
+    { id: 'top',  label: '上排 QWERTYUIOP', letters: ['Q','W','E','R','T','Y','U','I','O','P'], hint: '熟悉上排，多數英文字母在這裡' },
+    { id: 'bottom', label: '下排 ZXCVBNM',   letters: ['Z','X','C','V','B','N','M'], hint: '最少用到的下排，補強最弱的一環' },
+    { id: 'index', label: '只練食指 (RTFGVB / YUHJNM)', letters: ['R','T','F','G','V','B','Y','U','H','J','N','M'], hint: '左右食指分組，先穩住兩指再擴充' }
+];
+
 export const VOCABULARY = [
     'APPLE', 'BOOK', 'CAT', 'DOG', 'EGG', 'FISH', 'GOOD', 'HAPPY', 'ICE', 'JUMP',
     'KITE', 'LION', 'MOON', 'NICE', 'OPEN', 'PINK', 'QUIET', 'RED', 'SUN', 'TREE',

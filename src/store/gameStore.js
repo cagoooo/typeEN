@@ -119,6 +119,11 @@ export const useGameStore = create((set, get) => ({
 
     setMode: (mode) => set({ mode }),
     setGameState: (state) => set({ gameState: state }),
+
+    // ADVANCED mode practice subset (null = full alphabet)
+    practiceSubset: null,
+    setPracticeSubset: (subset) => set({ practiceSubset: subset }),
+
     setHealth: (health) => set({ health }),
 
     deductHealth: (amount) => {

@@ -99,6 +99,10 @@ const GameArea = ({ onGameEnd }) => {
         if (currentMode === 'BEGINNER') {
             // Extremely slow and constant speed for beginners
             speed = Math.random() * (0.5 - 0.3) + 0.3;
+        } else if (currentMode === 'ADVANCED') {
+            // Bridge between BEGINNER and NORMAL: predictable, no bombs/heal,
+            // and a fixed slow speed regardless of progress.
+            speed = 0.6 + Math.random() * 0.2; // 0.6 – 0.8
         } else if (currentMode === 'CAMPAIGN' && levelConfigRef.current) {
             speed = levelConfigRef.current.config.speed + (Math.random() * 0.6);
             if (levelConfigRef.current.objective.type === 'PERFECT_WORDS') {
@@ -259,9 +263,16 @@ const GameArea = ({ onGameEnd }) => {
         incrementCombo();
 
         const currentMode = useGameStore.getState().mode;
-        const maxCompleted = currentMode === 'WORD' ? 10 : ALPHABET.length;
+        const subset = useGameStore.getState().practiceSubset;
+        // ADVANCED can use a smaller letter pool (e.g. only home row); win at pool size.
+        const advancedTarget = (subset && subset.length > 0) ? subset.length : ALPHABET.length;
+        const maxCompleted = currentMode === 'WORD'
+            ? 10
+            : currentMode === 'ADVANCED'
+                ? advancedTarget
+                : ALPHABET.length;
 
-        if ((currentMode === 'NORMAL' || currentMode === 'BEGINNER' || currentMode === 'WORD') && newCompleted >= maxCompleted) {
+        if ((currentMode === 'NORMAL' || currentMode === 'BEGINNER' || currentMode === 'WORD' || currentMode === 'ADVANCED') && newCompleted >= maxCompleted) {
             playSound('end');
             endGame(true);
         } else if (currentMode === 'CAMPAIGN' && levelConfigRef.current) {
@@ -388,9 +399,14 @@ const GameArea = ({ onGameEnd }) => {
         window.addEventListener('resize', resize);
         resize();
 
-        if (useGameStore.getState().mode === 'WORD') {
+        const initMode = useGameStore.getState().mode;
+        const initSubset = useGameStore.getState().practiceSubset;
+        if (initMode === 'WORD') {
             const shuffled = [...VOCABULARY].sort(() => Math.random() - 0.5);
             lettersToDropRef.current = shuffled.slice(0, 10);
+        } else if (initMode === 'ADVANCED' && initSubset && initSubset.length > 0) {
+            // Subset practice: only drop letters from the chosen row/finger group.
+            lettersToDropRef.current = [...initSubset].sort(() => Math.random() - 0.5);
         } else {
             lettersToDropRef.current = [...ALPHABET].sort(() => Math.random() - 0.5);
         }
@@ -400,6 +416,7 @@ const GameArea = ({ onGameEnd }) => {
         engineState.current.particles = [];
         engineState.current.floatingTexts = [];
         engineState.current.missedLetters = {};
+        engineState.current.firstMissUsed = false; // ADVANCED: forgive 1 miss
         timeRef.current = 0;
 
         audioEngine.playBGM(useGameStore.getState().equippedBgm);
@@ -484,24 +501,27 @@ const GameArea = ({ onGameEnd }) => {
 
             const state = useGameStore.getState();
             const gm = state.mode;
+            const subset = state.practiceSubset;
             const currentCompleted = state.completedCount;
-            const target = (gm === 'WORD') ? 10 : ALPHABET.length; // ENDLESS/CAMPAIGN refill infinitely
+            // ADVANCED with a subset uses the subset size as the win target.
+            const advancedPool = (gm === 'ADVANCED' && subset && subset.length > 0) ? subset : ALPHABET;
+            const target = (gm === 'WORD') ? 10 : advancedPool.length; // ENDLESS/CAMPAIGN refill infinitely
 
             // Refill if needed
             if (lettersToDropRef.current.length === 0) {
                 if (gm === 'ENDLESS' || gm === 'CAMPAIGN') {
                     lettersToDropRef.current = [...ALPHABET].sort(() => Math.random() - 0.5);
                 } else if (currentCompleted < target) {
-                    // Refill for NORMAL/BEGINNER/WORD if letters ran out before target
-                    lettersToDropRef.current = [...ALPHABET].sort(() => Math.random() - 0.5);
+                    // Refill for NORMAL/BEGINNER/WORD/ADVANCED if letters ran out before target
+                    lettersToDropRef.current = [...advancedPool].sort(() => Math.random() - 0.5);
                 }
             }
 
-            const currentMode = useGameStore.getState().mode;
-            if (currentMode === 'BEGINNER') {
-                // Limit concurrent letters for beginners to prevent visual overload
-                // Check BEFORE spawning
-                if (engineState.current.letters.length >= 3) {
+            const currentMode = gm;
+            if (currentMode === 'BEGINNER' || currentMode === 'ADVANCED') {
+                // Cap concurrent letters: 3 for beginners, 4 for advanced.
+                const cap = currentMode === 'BEGINNER' ? 3 : 4;
+                if (engineState.current.letters.length >= cap) {
                     setTimeout(() => spawnSequence(generation), 500);
                     return;
                 }
@@ -513,6 +533,9 @@ const GameArea = ({ onGameEnd }) => {
                 let delay = 0;
                 if (currentMode === 'BEGINNER') {
                     delay = Math.random() * (4000 - 2500) + 2500;
+                } else if (currentMode === 'ADVANCED') {
+                    // Predictable cadence — no progress-based speed-up.
+                    delay = 1500 + Math.random() * 500; // 1500 – 2000 ms
                 } else if (currentMode === 'CAMPAIGN' && levelConfigRef.current) {
                     delay = levelConfigRef.current.config.spawnInterval * (Math.random() * 0.4 + 0.8);
                 } else {
@@ -596,7 +619,16 @@ const GameArea = ({ onGameEnd }) => {
                         engineState.current.floatingTexts.push({ x: canvasWidth / 2, y: height / 2, text: 'BOSS ESCAPED! -5 HP', colorHex: '#ef4444', life: 1.5 });
                     } else if (l.type !== 'BOMB') {
                         const curMode = useGameStore.getState().mode;
-                        if (curMode !== 'BEGINNER') {
+                        // ADVANCED: forgive the very first miss of the run.
+                        const firstMissForgiven = curMode === 'ADVANCED' && !engineState.current.firstMissUsed;
+                        if (firstMissForgiven) {
+                            engineState.current.firstMissUsed = true;
+                            const cw = canvasRef.current ? canvasRef.current.width : window.innerWidth;
+                            engineState.current.floatingTexts.push({
+                                x: cw / 2, y: height / 2 - 40,
+                                text: '寬限免扣血！', colorHex: '#fbbf24', life: 1.5
+                            });
+                        } else if (curMode !== 'BEGINNER') {
                             hpDeducted += 1;
                         }
                         // PERFECT_WORDS: any miss = instant fail
@@ -893,7 +925,16 @@ const GameArea = ({ onGameEnd }) => {
             <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-30 font-['Orbitron']">
                 <div className="flex gap-4">
                     <div className="bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2 rounded-xl text-white shadow-[0_0_15px_rgba(255,255,255,0.1)] font-sans font-bold text-sm md:text-base">
-                        {mode === 'NORMAL' ? `進度: ${completedCount} /${ALPHABET.length}` : mode === 'WORD' ? `進度: ${completedCount}/10` : `擊破: ${completedCount} `}
+                        {(() => {
+                            if (mode === 'WORD') return `進度: ${completedCount}/10`;
+                            if (mode === 'NORMAL') return `進度: ${completedCount} /${ALPHABET.length}`;
+                            if (mode === 'ADVANCED') {
+                                const sub = useGameStore.getState().practiceSubset;
+                                const tgt = (sub && sub.length > 0) ? sub.length : ALPHABET.length;
+                                return `進度: ${completedCount} /${tgt}`;
+                            }
+                            return `擊破: ${completedCount} `;
+                        })()}
                     </div>
                     <div className="bg-red-500/20 backdrop-blur-md border border-red-500/30 px-4 py-2 rounded-xl text-red-200 shadow-[0_0_15px_rgba(239,68,68,0.2)] font-sans font-bold text-sm md:text-base">
                         生命: {health}

@@ -18,7 +18,7 @@ import ResultShareCard from './components/ResultShareCard';
 import CampaignMap from './components/CampaignMap';
 import StoryCutscene from './components/StoryCutscene';
 import { CAMPAIGN_LEVELS } from './utils/levels';
-import { BGM_CHOICES, APPEARANCE_ITEMS } from './utils/constants';
+import { BGM_CHOICES, APPEARANCE_ITEMS, PRACTICE_SUBSETS } from './utils/constants';
 import { encryptData, decryptData } from './utils/crypto';
 
 function App() {
@@ -115,15 +115,19 @@ function App() {
 
     const [bestStats, setBestStats] = useState({
         beginnerTime: 999, beginnerCombo: 0,
+        advancedTime: 999, advancedCombo: 0,
         normalTime: 999, normalCombo: 0,
         endlessTime: 0, endlessCombo: 0,
         wordTime: 999, wordCombo: 0
     });
 
+    const [showAdvancedPicker, setShowAdvancedPicker] = useState(false);
+
     const handleStatsReset = () => {
         localStorage.removeItem('typeEN_stats');
         setBestStats({
             beginnerTime: 999, beginnerCombo: 0,
+            advancedTime: 999, advancedCombo: 0,
             normalTime: 999, normalCombo: 0,
             endlessTime: 0, endlessCombo: 0,
             wordTime: 999, wordCombo: 0
@@ -266,8 +270,11 @@ function App() {
         }
     }, []);
 
-    const startGame = (mode) => {
+    const startGame = (mode, opts = {}) => {
         setMode(mode);
+        // ADVANCED can scope to a letter subset (row / finger group); other modes
+        // always run on the full alphabet — clear any leftover subset from a prior run.
+        useGameStore.getState().setPracticeSubset(mode === 'ADVANCED' ? (opts.subset || null) : null);
         resetGame();
         setGameState('PLAYING');
         setGameResult(null);
@@ -400,6 +407,31 @@ function App() {
                 if (isNewBestRank && result.isWin) statsToSync.normalRank = rank;
                 setBestStats(statsToSync);
                 localStorage.setItem('typeEN_stats', encryptData(statsToSync));
+            }
+        } else if (state.mode === 'ADVANCED') {
+            // Only full-alphabet runs ('all' subset = null/empty) are eligible for the
+            // leaderboard; row/finger drills are pure practice and don't update stats.
+            const sub = state.practiceSubset;
+            const isFullRun = !sub || sub.length === 0;
+            if (isFullRun) {
+                let improved = false;
+                if (result.isWin && result.time < (bestStats.advancedTime || 999)) {
+                    statsToSync.advancedTime = result.time;
+                    improved = true;
+                }
+                if (result.maxCombo > (bestStats.advancedCombo || 0)) {
+                    statsToSync.advancedCombo = result.maxCombo;
+                    improved = true;
+                }
+                if (result.completed > (bestStats.advancedCompleted || 0)) {
+                    statsToSync.advancedCompleted = result.completed;
+                    improved = true;
+                }
+                if (improved) {
+                    if (isNewBestRank && result.isWin) statsToSync.advancedRank = rank;
+                    setBestStats(statsToSync);
+                    localStorage.setItem('typeEN_stats', encryptData(statsToSync));
+                }
             }
         } else if (state.mode === 'ENDLESS') {
             let improved = false;
@@ -642,6 +674,12 @@ function App() {
                                 初學者模式
                             </button>
                             <button
+                                onClick={() => setShowAdvancedPicker(true)}
+                                className="px-8 py-3 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-full text-xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(20,184,166,0.6)] active:scale-95 tracking-wider w-full md:w-auto"
+                            >
+                                進階模式
+                            </button>
+                            <button
                                 onClick={() => startGame('NORMAL')}
                                 className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-full text-xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(99,102,241,0.6)] active:scale-95 tracking-wider w-full md:w-auto"
                             >
@@ -745,7 +783,16 @@ function App() {
                             <div className="text-xl text-gray-300 mb-8 space-y-4 font-['Orbitron']">
                                 <div className="flex justify-between items-center border-b border-gray-700/50 pb-2">
                                     <span>完成進度:</span>
-                                    <span className="text-white font-bold">{gameResult.completed} {useGameStore.getState().mode === 'ENDLESS' ? '' : '/ 26'}</span>
+                                    <span className="text-white font-bold">{gameResult.completed} {(() => {
+                                        const m = useGameStore.getState().mode;
+                                        if (m === 'ENDLESS') return '';
+                                        if (m === 'WORD') return '/ 10';
+                                        if (m === 'ADVANCED') {
+                                            const sub = useGameStore.getState().practiceSubset;
+                                            return `/ ${(sub && sub.length > 0) ? sub.length : 26}`;
+                                        }
+                                        return '/ 26';
+                                    })()}</span>
                                 </div>
 
                                 {gameResult.isWin && (
@@ -827,7 +874,11 @@ function App() {
                             ) : (
                                 <>
                                     <button
-                                        onClick={() => startGame(useGameStore.getState().mode)}
+                                        onClick={() => {
+                                            const m = useGameStore.getState().mode;
+                                            const sub = useGameStore.getState().practiceSubset;
+                                            startGame(m, m === 'ADVANCED' ? { subset: sub } : {});
+                                        }}
                                         className="px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-full text-xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] active:scale-95 tracking-wider"
                                     >
                                         再玩一次
@@ -947,6 +998,42 @@ function App() {
                         <div className="bg-indigo-600/90 text-white px-6 py-3 rounded-full shadow-[0_0_20px_rgba(99,102,241,0.6)] backdrop-blur-md border border-indigo-400 font-sans font-bold whitespace-nowrap flex items-center gap-2">
                             ✨ {toastMsg}
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Advanced Mode — Practice Subset Picker */}
+            {showAdvancedPicker && (
+                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-md">
+                    <div className="bg-gray-900 border border-teal-500/30 rounded-2xl shadow-[0_0_40px_rgba(20,184,166,0.25)] p-6 max-w-md w-full animate-in fade-in zoom-in duration-300">
+                        <h3 className="text-2xl font-bold text-teal-300 mb-2 text-center tracking-wider">進階模式</h3>
+                        <p className="text-sm text-gray-400 text-center mb-5 font-sans">速度比一般模式慢、首次漏接免扣血。可先選一個區段熱身，全鍵盤才會進排行榜。</p>
+                        <div className="flex flex-col gap-3">
+                            {PRACTICE_SUBSETS.map(s => (
+                                <button
+                                    key={s.id}
+                                    onClick={() => {
+                                        setShowAdvancedPicker(false);
+                                        startGame('ADVANCED', { subset: s.letters });
+                                    }}
+                                    className="text-left px-4 py-3 rounded-xl border border-teal-500/30 bg-teal-500/5 hover:bg-teal-500/15 hover:border-teal-400 transition-all font-sans group"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-teal-200 font-bold text-base group-hover:text-white">{s.label}</span>
+                                        {s.id === 'all' && (
+                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/40">排行榜</span>
+                                        )}
+                                    </div>
+                                    <div className="text-xs text-gray-400 mt-1">{s.hint}</div>
+                                </button>
+                            ))}
+                        </div>
+                        <button
+                            onClick={() => setShowAdvancedPicker(false)}
+                            className="mt-5 w-full py-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white text-sm font-sans"
+                        >
+                            取消
+                        </button>
                     </div>
                 </div>
             )}

@@ -18,6 +18,7 @@ const Leaderboard = ({ onClose, onStartMode }) => {
 
     const MODES = [
         { id: 'BEGINNER', label: '初學者', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/50', cta: 'bg-emerald-600 hover:bg-emerald-500' },
+        { id: 'ADVANCED', label: '進階模式', color: 'text-teal-400', bg: 'bg-teal-500/10', border: 'border-teal-500/50', cta: 'bg-teal-600 hover:bg-teal-500' },
         { id: 'NORMAL', label: '一般模式', color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/50', cta: 'bg-indigo-600 hover:bg-indigo-500' },
         { id: 'ENDLESS', label: '無盡生存', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/50', cta: 'bg-purple-600 hover:bg-purple-500' },
         { id: 'WORD', label: '單字挑戰', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/50', cta: 'bg-yellow-600 hover:bg-yellow-500' }
@@ -172,9 +173,9 @@ const Leaderboard = ({ onClose, onStartMode }) => {
                             {/* List Rows */}
                             {scores.map((score, index) => {
                                 const modeColor = MODES.find(m => m.id === currentMode)?.color || 'text-white';
-                                const timeValue = currentMode === 'ENDLESS' ? score.endlessTime : currentMode === 'NORMAL' ? score.normalTime : currentMode === 'WORD' ? score.wordTime : score.beginnerTime;
-                                const comboValue = currentMode === 'ENDLESS' ? score.endlessCombo : currentMode === 'NORMAL' ? score.normalCombo : currentMode === 'WORD' ? score.wordCombo : score.beginnerCombo;
-                                const completedValue = currentMode === 'ENDLESS' ? score.endlessCompleted : currentMode === 'NORMAL' ? score.normalCompleted : currentMode === 'WORD' ? score.wordCompleted : score.beginnerCompleted;
+                                const timeValue = currentMode === 'ENDLESS' ? score.endlessTime : currentMode === 'NORMAL' ? score.normalTime : currentMode === 'WORD' ? score.wordTime : currentMode === 'ADVANCED' ? score.advancedTime : score.beginnerTime;
+                                const comboValue = currentMode === 'ENDLESS' ? score.endlessCombo : currentMode === 'NORMAL' ? score.normalCombo : currentMode === 'WORD' ? score.wordCombo : currentMode === 'ADVANCED' ? score.advancedCombo : score.beginnerCombo;
+                                const completedValue = currentMode === 'ENDLESS' ? score.endlessCompleted : currentMode === 'NORMAL' ? score.normalCompleted : currentMode === 'WORD' ? score.wordCompleted : currentMode === 'ADVANCED' ? score.advancedCompleted : score.beginnerCompleted;
                                 // Time-mode players who haven't fully cleared yet (time === 999 / undefined) are in-progress rows
                                 const isCleared = currentMode === 'ENDLESS'
                                     ? (timeValue !== undefined && timeValue > 0)

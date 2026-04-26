@@ -48,6 +48,7 @@ export const invalidateLeaderboardCache = (gameMode = null) => {
 // Map game mode → firestore field keys
 const FIELD_MAP = {
     BEGINNER: { time: 'stats.beginnerTime', completed: 'stats.beginnerCompleted', combo: 'stats.beginnerCombo' },
+    ADVANCED: { time: 'stats.advancedTime', completed: 'stats.advancedCompleted', combo: 'stats.advancedCombo' },
     NORMAL: { time: 'stats.normalTime', completed: 'stats.normalCompleted', combo: 'stats.normalCombo' },
     WORD: { time: 'stats.wordTime', completed: 'stats.wordCompleted', combo: 'stats.wordCombo' },
     ENDLESS: { time: 'stats.endlessTime', completed: 'stats.endlessCompleted', combo: 'stats.endlessCombo' }
@@ -64,14 +65,17 @@ const rowFromDoc = (doc) => {
         normalTime: data.stats?.normalTime,
         wordTime: data.stats?.wordTime,
         beginnerTime: data.stats?.beginnerTime,
+        advancedTime: data.stats?.advancedTime,
         endlessCombo: data.stats?.endlessCombo,
         normalCombo: data.stats?.normalCombo,
         wordCombo: data.stats?.wordCombo,
         beginnerCombo: data.stats?.beginnerCombo,
+        advancedCombo: data.stats?.advancedCombo,
         endlessCompleted: data.stats?.endlessCompleted,
         normalCompleted: data.stats?.normalCompleted,
         wordCompleted: data.stats?.wordCompleted,
         beginnerCompleted: data.stats?.beginnerCompleted,
+        advancedCompleted: data.stats?.advancedCompleted,
         appearance: data.appearance || { avatar: 'default', border: 'none', title: '探員' }
     };
 };
