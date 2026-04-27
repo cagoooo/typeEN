@@ -68,7 +68,8 @@ const GameArea = ({ onGameEnd }) => {
         floatingTexts: [],
         isOver: false,
         shakeTime: 0,
-        missedLetters: {}
+        missedLetters: {},
+        recentOutcomes: [] // 0.5 DDA: rolling window of last N 'hit'/'miss' for ADVANCED
     });
 
     // Internal Refs
@@ -81,10 +82,20 @@ const GameArea = ({ onGameEnd }) => {
         setTimeout(() => setShake(false), 200);
     };
 
+    // 0.5 DDA helper: keep a rolling 5-event window of 'hit' | 'miss'
+    const trackOutcome = (kind) => {
+        const arr = engineState.current.recentOutcomes;
+        arr.push(kind);
+        if (arr.length > 5) arr.shift();
+    };
+
     const endGame = useCallback((isWin) => {
         if (engineState.current.isOver) return;
         engineState.current.isOver = true;
-        onGameEnd(isWin, { missedLetters: engineState.current.missedLetters });
+        onGameEnd(isWin, {
+            missedLetters: engineState.current.missedLetters,
+            firstMissUsed: !!engineState.current.firstMissUsed
+        });
     }, [onGameEnd]);
 
     const spawnLetter = useCallback(() => {
@@ -100,9 +111,18 @@ const GameArea = ({ onGameEnd }) => {
             // Extremely slow and constant speed for beginners
             speed = Math.random() * (0.5 - 0.3) + 0.3;
         } else if (currentMode === 'ADVANCED') {
-            // Bridge between BEGINNER and NORMAL: predictable, no bombs/heal,
-            // and a fixed slow speed regardless of progress.
-            speed = 0.6 + Math.random() * 0.2; // 0.6 – 0.8
+            // Bridge between BEGINNER and NORMAL: predictable, no bombs/heal.
+            // 0.5 Mini DDA: silently nudge speed within a friendly band based on
+            // the player's recent 5-letter hit rate. Never escapes 0.55–0.85.
+            let base = 0.6 + Math.random() * 0.2; // 0.6 – 0.8 default
+            const outcomes = engineState.current.recentOutcomes;
+            if (outcomes.length >= 5) {
+                const hits = outcomes.filter(o => o === 'hit').length;
+                const rate = hits / outcomes.length;
+                if (rate >= 1.0) base += 0.05;       // 5/5: gentle nudge up
+                else if (rate <= 0.4) base -= 0.05;  // struggling: ease down
+            }
+            speed = Math.max(0.55, Math.min(0.85, base));
         } else if (currentMode === 'CAMPAIGN' && levelConfigRef.current) {
             speed = levelConfigRef.current.config.speed + (Math.random() * 0.6);
             if (levelConfigRef.current.objective.type === 'PERFECT_WORDS') {
@@ -261,6 +281,7 @@ const GameArea = ({ onGameEnd }) => {
 
         const newCompleted = incrementCompleted();
         incrementCombo();
+        trackOutcome('hit');
 
         const currentMode = useGameStore.getState().mode;
         const subset = useGameStore.getState().practiceSubset;
@@ -417,6 +438,7 @@ const GameArea = ({ onGameEnd }) => {
         engineState.current.floatingTexts = [];
         engineState.current.missedLetters = {};
         engineState.current.firstMissUsed = false; // ADVANCED: forgive 1 miss
+        engineState.current.recentOutcomes = []; // 0.5 DDA window reset
         timeRef.current = 0;
 
         audioEngine.playBGM(useGameStore.getState().equippedBgm);
@@ -638,6 +660,7 @@ const GameArea = ({ onGameEnd }) => {
                             return;
                         }
                         engineState.current.missedLetters[l.char] = (engineState.current.missedLetters[l.char] || 0) + 1;
+                        trackOutcome('miss');
                         useGameStore.getState().resetCombo();
                         triggerShake();
 

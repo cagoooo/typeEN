@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Plus, Users, RefreshCw, Copy, Check, QrCode, Download, SortAsc, SortDesc, ArrowUpDown, User as UserIcon, Trash2, RotateCcw, LayoutGrid, List } from 'lucide-react';
+import { X, Plus, Users, RefreshCw, Copy, Check, QrCode, Download, SortAsc, SortDesc, ArrowUpDown, User as UserIcon, Trash2, RotateCcw, LayoutGrid, List, Megaphone } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { getTeacherClasses, createClass, getClassStudents, removeStudentFromClass, resetUserStats } from '../utils/userService';
+import { getTeacherClasses, createClass, getClassStudents, removeStudentFromClass, resetUserStats, setClassRecommendation, getClassRecommendation } from '../utils/userService';
 import { useGameStore } from '../store/gameStore';
+import { PRACTICE_SUBSETS } from '../utils/constants';
 
 const TeacherDashboard = ({ userProfile, onClose, onStatsReset }) => {
     const [classes, setClasses] = useState([]);
@@ -222,8 +223,31 @@ const TeacherDashboard = ({ userProfile, onClose, onStatsReset }) => {
     useEffect(() => {
         if (selectedClass?.id) {
             loadStudents(selectedClass.id);
+            // 0.6 — also fetch the existing recommendation for the form state
+            (async () => {
+                const rec = await getClassRecommendation(selectedClass.id);
+                setRecMode(rec?.mode || '');
+                setRecSubsetId(rec?.subsetId || '');
+            })();
         }
     }, [selectedClass?.id]);
+
+    // 0.6 — Recommendation form state
+    const [recMode, setRecMode] = useState('');
+    const [recSubsetId, setRecSubsetId] = useState('');
+    const [recSaving, setRecSaving] = useState(false);
+    const [recSavedAt, setRecSavedAt] = useState(0);
+
+    const saveRecommendation = async () => {
+        if (!selectedClass) return;
+        setRecSaving(true);
+        const ok = await setClassRecommendation(selectedClass.id, {
+            mode: recMode || null,
+            subsetId: recMode === 'ADVANCED' ? recSubsetId || null : null
+        });
+        setRecSaving(false);
+        if (ok) setRecSavedAt(Date.now());
+    };
 
     // Initial load of classes
     useEffect(() => {
@@ -477,6 +501,53 @@ const TeacherDashboard = ({ userProfile, onClose, onStatsReset }) => {
                                         </button>
                                     </div>
                                 </div>
+                                {/* 0.6 — 本週主推模式設定 */}
+                                <div className="px-4 sm:px-6 pt-4 pb-2 border-b border-gray-800/60 bg-teal-500/5">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Megaphone className="w-4 h-4 text-teal-400" />
+                                        <span className="text-sm font-bold text-teal-300">本週主推模式</span>
+                                        <span className="text-xs text-gray-500">學生開遊戲時會在主選單看到提示橫幅</span>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <select
+                                            value={recMode}
+                                            onChange={(e) => setRecMode(e.target.value)}
+                                            className="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500"
+                                        >
+                                            <option value="">不指定（清除）</option>
+                                            <option value="BEGINNER">初學者模式</option>
+                                            <option value="ADVANCED">進階模式</option>
+                                            <option value="NORMAL">一般模式</option>
+                                            <option value="WORD">單字挑戰</option>
+                                            <option value="ENDLESS">無盡生存</option>
+                                        </select>
+                                        {recMode === 'ADVANCED' && (
+                                            <select
+                                                value={recSubsetId}
+                                                onChange={(e) => setRecSubsetId(e.target.value)}
+                                                className="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-teal-500"
+                                            >
+                                                <option value="">不指定區段</option>
+                                                {PRACTICE_SUBSETS.map(p => (
+                                                    <option key={p.id} value={p.id}>{p.label}</option>
+                                                ))}
+                                            </select>
+                                        )}
+                                        <button
+                                            onClick={saveRecommendation}
+                                            disabled={recSaving}
+                                            className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white text-sm rounded font-bold"
+                                        >
+                                            {recSaving ? '儲存中…' : '套用'}
+                                        </button>
+                                        {recSavedAt > 0 && Date.now() - recSavedAt < 3000 && (
+                                            <span className="text-xs text-emerald-400 flex items-center gap-1">
+                                                <Check className="w-3 h-3" /> 已套用
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
                                 <div className="flex-1 overflow-auto p-4 sm:p-6 relative z-10">
                                     {isLoading ? (
                                         <div className="flex justify-center items-center h-40">

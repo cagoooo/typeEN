@@ -31,7 +31,10 @@ const saveGuestData = (state) => {
         unlockedBorders: state.unlockedBorders,
         unlockedTitles: state.unlockedTitles,
         coins: state.coins,
-        unlockedItems: state.unlockedItems
+        unlockedItems: state.unlockedItems,
+        advancedClearCount: state.advancedClearCount,
+        advancedSubsetUnlocked: state.advancedSubsetUnlocked,
+        missedLettersMap: state.missedLettersMap
     };
     localStorage.setItem('typeEN_guestData', encryptData(dataToSave));
 };
@@ -48,6 +51,13 @@ export const useGameStore = create((set, get) => ({
 
     campaignUnlocked: savedGuestData?.campaignUnlocked || ['1-1'],
     currentCampaignLevel: null,
+
+    // ADVANCED progression counters (for achievements & unlocks)
+    advancedClearCount: savedGuestData?.advancedClearCount || 0,
+    // 'all' is always available so confident students aren't gated; rows are the
+    // learning ladder ('home' is the entry → 'top' → 'bottom' → 'index').
+    advancedSubsetUnlocked: savedGuestData?.advancedSubsetUnlocked || ['all', 'home'],
+    lastAdvancedRunSummary: { perfect: false, isFullKeyboard: false, subsetId: null }, // transient, populated by GameArea on game end
 
     // Coin Economy & Phase 6 State
     streak: savedGuestData?.streak || { count: 0, lastDate: null },
@@ -122,7 +132,45 @@ export const useGameStore = create((set, get) => ({
 
     // ADVANCED mode practice subset (null = full alphabet)
     practiceSubset: null,
-    setPracticeSubset: (subset) => set({ practiceSubset: subset }),
+    practiceSubsetId: null, // tracks which preset id is active (for unlock logic)
+    setPracticeSubset: (subset, id = null) => set({ practiceSubset: subset, practiceSubsetId: id }),
+
+    // 0.3 cumulative miss tracking — letter -> total missed count across runs
+    missedLettersMap: savedGuestData?.missedLettersMap || {},
+
+    // 0.2 unlock a new subset id when the player clears the previous step
+    unlockAdvancedSubset: (id) => {
+        set((state) => {
+            if (state.advancedSubsetUnlocked.includes(id)) return state;
+            const next = [...state.advancedSubsetUnlocked, id];
+            saveGuestData({ ...state, advancedSubsetUnlocked: next });
+            return { advancedSubsetUnlocked: next };
+        });
+    },
+
+    // Called by GameArea on a successful ADVANCED run; populates summary then bumps counter.
+    recordAdvancedClear: ({ perfect, isFullKeyboard, subsetId }) => {
+        set((state) => {
+            const summary = { perfect: !!perfect, isFullKeyboard: !!isFullKeyboard, subsetId: subsetId || null };
+            const next = isFullKeyboard ? state.advancedClearCount + 1 : state.advancedClearCount;
+            const updated = { ...state, lastAdvancedRunSummary: summary, advancedClearCount: next };
+            saveGuestData(updated);
+            return { lastAdvancedRunSummary: summary, advancedClearCount: next };
+        });
+    },
+
+    // 0.3 merge per-run miss counts into cumulative map (cap at 999 per letter to avoid runaway)
+    mergeMissedLetters: (perRunMap) => {
+        if (!perRunMap || typeof perRunMap !== 'object') return;
+        set((state) => {
+            const merged = { ...state.missedLettersMap };
+            for (const [k, v] of Object.entries(perRunMap)) {
+                merged[k] = Math.min((merged[k] || 0) + (v || 0), 999);
+            }
+            saveGuestData({ ...state, missedLettersMap: merged });
+            return { missedLettersMap: merged };
+        });
+    },
 
     setHealth: (health) => set({ health }),
 
@@ -422,6 +470,12 @@ export const useGameStore = create((set, get) => ({
         checkAndUnlock(state.maxCombo >= 200, 'combo_200');
         checkAndUnlock(state.mode === 'ENDLESS' && state.gameTime >= 60, 'survive_60s');
         checkAndUnlock(state.mode === 'BEGINNER' && state.maxCombo >= 100, 'beginner_pro');
+        // ADVANCED achievements — gated on the most recent ADVANCED run summary so we
+        // don't accidentally award them when checking from a different mode.
+        const adv = state.lastAdvancedRunSummary || {};
+        checkAndUnlock(state.mode === 'ADVANCED' && adv.isFullKeyboard, 'advanced_clear');
+        checkAndUnlock(state.mode === 'ADVANCED' && adv.isFullKeyboard && adv.perfect, 'advanced_perfect');
+        checkAndUnlock(state.advancedClearCount >= 10, 'advanced_master');
         checkAndUnlock(state.totalCompleted >= 1000, 'typewriter');
         checkAndUnlock(state.totalCoinsEarned >= 2000, 'millionaire');
         checkAndUnlock(state.totalItemsBought >= 5, 'shopaholic');

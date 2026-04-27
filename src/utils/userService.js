@@ -286,6 +286,47 @@ export const getTeacherClasses = async (teacherUid) => {
     }
 };
 
+// 0.6 — Teacher sets the "weekly featured mode" for a class.
+// `mode` is one of: null | 'BEGINNER' | 'ADVANCED' | 'NORMAL' | 'ENDLESS' | 'WORD'
+// `subsetId` only matters when mode === 'ADVANCED' (one of PRACTICE_SUBSETS ids).
+export const setClassRecommendation = async (classId, { mode, subsetId } = {}) => {
+    if (!classId) return false;
+    try {
+        const ref = doc(db, CLASSES_COLLECTION, classId);
+        await updateDoc(ref, {
+            recommendedMode: mode || null,
+            recommendedSubsetId: subsetId || null,
+            recommendationUpdatedAt: serverTimestamp()
+        });
+        return true;
+    } catch (e) {
+        console.error("Error setting class recommendation:", e);
+        return false;
+    }
+};
+
+// 0.6 — Pull the active recommendation for a single class (used by student banner).
+export const getClassRecommendation = async (classId) => {
+    if (!classId) return null;
+    try {
+        const ref = doc(db, CLASSES_COLLECTION, classId);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) return null;
+        const d = snap.data();
+        if (!d.recommendedMode) return null;
+        return {
+            classId,
+            className: d.name,
+            mode: d.recommendedMode,
+            subsetId: d.recommendedSubsetId || null,
+            updatedAt: d.recommendationUpdatedAt || null
+        };
+    } catch (e) {
+        console.error("Error fetching class recommendation:", e);
+        return null;
+    }
+};
+
 // Get students in a class
 export const getClassStudents = async (classId) => {
     if (!classId) return [];
