@@ -20,6 +20,11 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    # Job-level env so `if: env.FIREBASE_SA != ''` actually sees the value at
+    # if-evaluation time (step-level env is set AFTER if is evaluated → footgun
+    # that silently skipped rules deploy from v1.1.x onwards).
+    env:
+      FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOKA_3CE9A }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -66,6 +71,5 @@ jobs:
         with:
           args: deploy --only firestore:rules,firestore:indexes
         env:
-          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOKA_3CE9A }}
           GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SOKA_3CE9A }}
           PROJECT_ID: soka-3ce9a
