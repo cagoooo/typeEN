@@ -125,9 +125,27 @@ function App() {
     const [showAdvancedPicker, setShowAdvancedPicker] = useState(false);
 
     // 0.6 — Class recommendation banner: { classId, className, mode, subsetId } | null
+    // (the useEffect that populates this lives below `userProfile` to avoid TDZ)
     const [classRec, setClassRec] = useState(null);
 
-    // Fetch the first non-empty recommendation across all joined classes once we have a profile.
+    const handleStatsReset = () => {
+        localStorage.removeItem('typeEN_stats');
+        setBestStats({
+            beginnerTime: 999, beginnerCombo: 0,
+            advancedTime: 999, advancedCombo: 0,
+            normalTime: 999, normalCombo: 0,
+            endlessTime: 0, endlessCombo: 0,
+            wordTime: 999, wordCombo: 0
+        });
+    };
+
+    const userProfile = useGameStore(state => state.userProfile);
+    const setUserProfile = useGameStore(state => state.setUserProfile);
+    const equippedBgm = useGameStore(state => state.equippedBgm);
+    const setEquippedBgm = useGameStore(state => state.setEquippedBgm);
+
+    // 0.6 — Fetch the first non-empty recommendation across all joined classes once we have a profile.
+    // Placed AFTER `userProfile` declaration to avoid a TDZ ReferenceError in the dep array.
     useEffect(() => {
         let cancelled = false;
         const run = async () => {
@@ -149,23 +167,6 @@ function App() {
         run();
         return () => { cancelled = true; };
     }, [userProfile?.uid, userProfile?.joinedClasses?.length]);
-
-    const handleStatsReset = () => {
-        localStorage.removeItem('typeEN_stats');
-        setBestStats({
-            beginnerTime: 999, beginnerCombo: 0,
-            advancedTime: 999, advancedCombo: 0,
-            normalTime: 999, normalCombo: 0,
-            endlessTime: 0, endlessCombo: 0,
-            wordTime: 999, wordCombo: 0
-        });
-    };
-
-    const userProfile = useGameStore(state => state.userProfile);
-    const setUserProfile = useGameStore(state => state.setUserProfile);
-    const equippedBgm = useGameStore(state => state.equippedBgm);
-    const setEquippedBgm = useGameStore(state => state.setEquippedBgm);
-
 
     // Initial auth listener
     useEffect(() => {
