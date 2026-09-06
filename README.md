@@ -1,5 +1,7 @@
 # 英文字母打字練習遊戲 (English Typing Practice Game)
 
+🌐 **線上使用：[英打打字超互動遊戲](https://cagoooo.github.io/typeEN/)**
+
 ## 🎮 專案簡介
 這是一個以 HTML、CSS 與原生理 JavaScript (Vanilla JS) 開發的網頁版英文字母打字練習遊戲。
 主要目標是幫助使用者熟悉鍵盤上的英文字母位置，並透過動態的下落動畫與「虛擬手指提示」來訓練盲打能力與反應速度。
@@ -109,7 +111,7 @@
 - Repository：`cagoooo/typeEN`
 - 可見性：公開
 - 主要技術：JavaScript、React、Vite、Firebase、Tailwind CSS
-- 線上入口：未在 GitHub repository metadata 設定
+- 線上入口：<https://cagoooo.github.io/typeEN/>
 
 ### 可以怎麼應用
 
