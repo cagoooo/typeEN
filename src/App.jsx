@@ -47,7 +47,8 @@ function App() {
 
     const handleLogin = async () => {
         try {
-            await loginWithGoogle();
+            const loggedInUser = await loginWithGoogle();
+            if (!loggedInUser) return; // App 內建瀏覽器已提醒，視為取消，不顯示登入成功
             showToast('登入成功！');
         } catch (error) {
             console.error("Login Error:", error);

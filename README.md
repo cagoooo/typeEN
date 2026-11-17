@@ -2,7 +2,7 @@
 
 🌐 **線上使用：[英打打字超互動遊戲](https://cagoooo.github.io/typeEN/)**
 
-> 📌 **目前版本：v1.3.3**（依據 `CHANGELOG.md`）
+> 📌 **目前版本：v1.3.4**（依據 `CHANGELOG.md`）
 
 ## 🎮 專案簡介
 這是一個以 HTML、CSS 與原生理 JavaScript (Vanilla JS) 開發的網頁版英文字母打字練習遊戲。
