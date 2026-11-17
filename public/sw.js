@@ -1,6 +1,7 @@
 // ⚠️ 版本號每次部署自動由 inject.py 或手動更新
 // 改用 Network First 策略：確保每次都能取得最新 JS/CSS
-const CACHE_VERSION = 'typeen-neon-v1.3.1';
+const CACHE_PREFIX = 'typeen-neon-';
+const CACHE_VERSION = CACHE_PREFIX + 'v1.3.2';
 const CACHE_NAME = CACHE_VERSION;
 
 // 靜態資產（字體、圖示等）才快取
@@ -36,11 +37,11 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(
         Promise.all([
             self.clients.claim(),
-            // 清除所有舊版快取
+            // 清除本工具的舊版快取（只動 typeen-neon- 開頭的，同網域其他工具的快取不動）
             caches.keys().then((keys) => {
                 return Promise.all(
                     keys.map((key) => {
-                        if (key !== CACHE_NAME) {
+                        if (key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME) {
                             console.log('[SW] 清除舊快取：', key);
                             return caches.delete(key);
                         }
