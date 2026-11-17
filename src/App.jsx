@@ -21,6 +21,7 @@ import AdvancedModePicker from './components/AdvancedModePicker';
 import { CAMPAIGN_LEVELS } from './utils/levels';
 import { BGM_CHOICES, APPEARANCE_ITEMS, PRACTICE_SUBSETS } from './utils/constants';
 import { encryptData, decryptData } from './utils/crypto';
+import SiteFooter from './components/SiteFooter';
 
 function App() {
     // Use individual selectors to prevent re-rendering every time the gameTime ticks
@@ -846,6 +847,9 @@ function App() {
                             <DailyQuestsPanel />
                         </div>
                     </div>
+
+                    {/* v1.3.1: 網站頁尾（作者署名連阿凱老師教育科技創新專區） */}
+                    <SiteFooter />
                 </div>
             )}
 
